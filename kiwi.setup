@@ -1,0 +1,20 @@
+;; adapted from the sdl2 egg
+(define (library-flags environment-variable command)
+  (let ((fallback (get-environment-variable environment-variable)))
+    (if fallback
+        (string-split fallback)
+        (with-input-from-pipe command read-lines))))
+
+(define sdl2-flags (library-flags "SDL2_FLAGS" "sdl2-config --cflags --libs"))
+(define kiwi-flags (library-flags "KIWI_FLAGS" "cmake --find-package -DNAME=KiWi -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=COMPILE"))
+
+(compile -s -O3 -d1 "kiwi.scm" -j kiwi -lKiWi ,@kiwi-flags ,@sdl2-flags)
+(compile -s "kiwi.import.scm")
+
+(install-extension
+ 'kiwi
+ '("kiwi.so" "kiwi.import.so")
+ '((version "0.0.1")))
+
+;; querying cmake leaves those behind
+(remove-file* "CMakeFiles")
