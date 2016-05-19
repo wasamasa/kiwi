@@ -74,8 +74,3 @@
     (loop)))
 
 (kw:quit! gui)
-(kw:release-surface! driver tileset)
-(kw:release-font! driver font)
-(kw:release-render-driver! driver)
-(kw:release-rect! geometry)
-(kw:release-rect! icon-rect)

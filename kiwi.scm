@@ -2,16 +2,16 @@
   (create-sdl2-render-driver release-render-driver!
    load-surface release-surface!
    load-font release-font!
-   init! quit!
+   init! paint! quit!
    font-set!
    rect release-rect!
    frame
    label label-icon-set! label-alignment-set!
    button
-   editbox editbox-font-set!
-   paint!)
+   editbox editbox-font-set!)
 
 (import chicken scheme foreign)
+(use clojurian-syntax)
 
 ;;; headers
 
@@ -45,6 +45,7 @@
 (define KW_LoadFont (foreign-lambda (c-pointer (struct "KW_Font")) "KW_LoadFont" (c-pointer (struct "KW_RenderDriver")) c-string unsigned-int))
 (define KW_ReleaseFont (foreign-lambda void "KW_ReleaseFont" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Font"))))
 (define KW_Init (foreign-lambda (c-pointer (struct "KW_GUI")) "KW_Init" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Surface"))))
+(define KW_Paint (foreign-lambda void "KW_Paint" (c-pointer (struct "KW_GUI"))))
 (define KW_Quit (foreign-lambda void "KW_Quit" (c-pointer (struct "KW_GUI"))))
 (define KW_SetFont (foreign-lambda void "KW_SetFont" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Font"))))
 (define CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h)) "KW_Rect *r = calloc(sizeof(KW_Rect), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
@@ -56,7 +57,6 @@
 (define KW_CreateButton (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateButton" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_CreateEditbox (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateEditbox" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_SetEditboxFont (foreign-lambda void "KW_SetEditboxFont" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Font"))))
-(define KW_Paint (foreign-lambda void "KW_Paint" (c-pointer (struct "KW_GUI"))))
 
 ;;; auxiliary records
 
@@ -67,92 +67,150 @@
 (define-record rect pointer)
 (define-record widget pointer)
 
+;;; errors
+
+(define (define-error location message . condition)
+  (let ((base (make-property-condition 'exn 'location location 'message message))
+        (extra (apply make-property-condition condition)))
+    (make-composite-condition base extra)))
+
+(define (oom-error location)
+  (define-error location "Failed to allocate memory" 'runtime))
+
+(define (sdl2-error message location)
+  (define-error location message 'sdl2))
+
+(define (usage-error message location)
+  (define-error location message 'usage))
+
 ;;; API
 
 (define (create-sdl2-render-driver renderer window)
-  ;; TODO: this can fail on insufficient memory
-  (let ((driver* (KW_CreateSDL2RenderDriver renderer window)))
-    (make-driver driver*)))
+  (if-let (driver* (KW_CreateSDL2RenderDriver renderer window))
+    (set-finalizer! (make-driver driver*) release-render-driver!)
+    (abort (oom-error 'create-sdl2-render-driver))))
 
 (define (release-render-driver! driver)
-  (KW_ReleaseRenderDriver (driver-pointer driver)))
+  (and-let* ((driver* (driver-pointer driver)))
+    (KW_ReleaseRenderDriver driver*)
+    (driver-pointer-set! driver #f)))
 
 (define (load-surface driver filename)
-  ;; TODO: this can fail if file not found
-  (let ((surface* (KW_LoadSurface (driver-pointer driver) filename)))
-    (make-surface surface*)))
+  (and-let* ((driver* (driver-pointer driver)))
+    (if-let (surface* (KW_LoadSurface driver* filename))
+      (set-finalizer! (make-surface surface*)
+                      (cut release-surface! driver <>))
+      (abort (sdl2-error "Could not load surface" 'load-surface)))))
 
 (define (release-surface! driver surface)
-  ;; TODO: set pointer to #f, deal with #f case
-  (KW_ReleaseSurface (driver-pointer driver) (surface-pointer surface)))
+  (and-let* ((driver* (driver-pointer driver))
+             (surface* (surface-pointer surface)))
+    (KW_ReleaseSurface driver* surface*)
+    (surface-pointer-set! surface #f)))
 
 (define (load-font driver fontname size)
-  ;; TODO: this can fail if font not found
-  (let ((font* (KW_LoadFont (driver-pointer driver) fontname size)))
-    (make-font font*)))
+  (and-let* ((driver* (driver-pointer driver)))
+    (if-let (font* (KW_LoadFont driver* fontname size))
+      (set-finalizer! (make-font font*)
+                      (cut release-font! driver <>))
+      (abort (sdl2-error "Could not load font" 'load-font)))))
 
 (define (release-font! driver font)
-  ;; TODO: set pointer to #f, deal with #f case
-  (KW_ReleaseFont (driver-pointer driver) (font-pointer font)))
+  (and-let* ((driver* (driver-pointer driver))
+             (font* (font-pointer font)))
+    (KW_ReleaseFont driver* font*)
+    (font-pointer-set! font #f)))
 
 (define (init! driver tileset)
-  ;; TODO: this can fail on insufficient memory
-  (let ((gui* (KW_Init (driver-pointer driver) (surface-pointer tileset))))
-    (make-gui gui*)))
-
-(define (quit! gui)
-  ;; TODO: set pointer to #f, deal with #f case
-  (KW_Quit (gui-pointer gui)))
-
-(define (font-set! gui font)
-  ;; TODO: this can fail if font is null
-  (KW_SetFont (gui-pointer gui) (font-pointer font)))
-
-(define (rect x y width height)
-  ;; TODO: this can fail on insufficient memory
-  (make-rect (CreateRect x y width height)))
-
-(define (release-rect! rect)
-  ;; TODO: set pointer to #f, deal with #f case
-  (FreeRect (rect-pointer rect)))
-
-;; NOTE: freeing widgets is *not* necessary
-(define (frame gui parent geometry)
-  ;; TODO: deal with potential null pointers, evaluate
-  ;; widget/specialized widget problem
-  ;; TODO: can widget creation ever fail?
-  (make-widget (KW_CreateFrame (gui-pointer gui) (and parent (widget-pointer parent)) (rect-pointer geometry))))
-
-(define (label gui parent text geometry)
-  ;; TODO: deal with potential null pointers, evaluate
-  ;; widget/specialized widget problem
-  ;; TODO: can widget creation ever fail?
-  (make-widget (KW_CreateLabel (gui-pointer gui) (and parent (widget-pointer parent)) text (rect-pointer geometry))))
-
-(define (label-icon-set! label clip)
-  (KW_SetLabelIcon (widget-pointer label) (rect-pointer clip)))
-
-(define (label-alignment-set! label halign hoffset valign voffset)
-  (let ((halign (case halign
-                  ((left) KW_LABEL_ALIGN_LEFT)
-                  ((center) KW_LABEL_ALIGN_CENTER)
-                  ((right) KW_LABEL_ALIGN_RIGHT)))
-        (valign (case valign
-                  ((top) KW_LABEL_ALIGN_TOP)
-                  ((middle) KW_LABEL_ALIGN_MIDDLE)
-                  ((bottom) KW_LABEL_ALIGN_BOTTOM))))
-    (KW_SetLabelAlignment (widget-pointer label) halign hoffset valign voffset)))
-
-(define (button gui parent text geometry)
-  (make-widget (KW_CreateButton (gui-pointer gui) (and parent (widget-pointer parent)) text (rect-pointer geometry))))
-
-(define (editbox gui parent text geometry)
-  (make-widget (KW_CreateEditbox (gui-pointer gui) (and parent (widget-pointer parent)) text (rect-pointer geometry))))
-
-(define (editbox-font-set! editbox font)
-  (KW_SetEditboxFont (widget-pointer editbox) (font-pointer font)))
+  (and-let* ((driver* (driver-pointer driver))
+             (tileset* (surface-pointer tileset)))
+    (if-let (gui* (KW_Init driver* tileset*))
+      ;; NOTE: an exit handler would make more sense
+      (make-gui gui*)
+      (abort (oom-error 'init!)))))
 
 (define (paint! gui)
   (KW_Paint (gui-pointer gui)))
+
+(define (quit! gui)
+  (and-let* ((gui* (gui-pointer gui)))
+    (KW_Quit gui*)
+    (gui-pointer-set! gui #f)))
+
+(define (font-set! gui font)
+  (and-let* ((gui* (gui-pointer gui))
+             (font* (font-pointer font)))
+    (KW_SetFont gui* font*)))
+
+(define (rect x y width height)
+  (if-let (rect* (CreateRect x y width height))
+    (set-finalizer! (make-rect rect*) release-rect!)
+    (abort (oom-error 'rect))))
+
+(define (release-rect! rect)
+  (and-let* ((rect* (rect-pointer rect)))
+    (FreeRect rect*)
+    (rect-pointer-set! rect #f)))
+
+(define (frame gui parent geometry)
+  (and-let* ((gui* (gui-pointer gui))
+             (geometry* (rect-pointer geometry)))
+    (let ((parent* (and parent (widget-pointer parent))))
+      (if-let (widget* (KW_CreateFrame gui* parent* geometry*))
+        ;; NOTE: freeing widgets is *not* necessary
+        (make-widget widget*)
+        (abort (oom-error 'frame))))))
+
+(define (label gui parent text geometry)
+  (and-let* ((gui* (gui-pointer gui))
+             (geometry* (rect-pointer geometry)))
+    (let ((parent* (and parent (widget-pointer parent))))
+      (if-let (widget* (KW_CreateLabel gui* parent* text geometry*))
+        (make-widget widget*)
+        (abort (oom-error 'label))))))
+
+(define (label-icon-set! label clip)
+  (and-let* ((label* (widget-pointer label))
+             (clip* (rect-pointer clip)))
+    (KW_SetLabelIcon label* clip*)))
+
+(define (label-alignment-set! label halign hoffset valign voffset)
+  (and-let* ((label* (widget-pointer label))
+             (halign (case halign
+                       ((left) KW_LABEL_ALIGN_LEFT)
+                       ((center) KW_LABEL_ALIGN_CENTER)
+                       ((right) KW_LABEL_ALIGN_RIGHT)))
+             (valign (case valign
+                       ((top) KW_LABEL_ALIGN_TOP)
+                       ((middle) KW_LABEL_ALIGN_MIDDLE)
+                       ((bottom) KW_LABEL_ALIGN_BOTTOM))))
+    (when (not halign)
+      (abort (usage-error "Invalid horizontal align value"
+                          'label-alignment-set!)))
+    (when (not valign)
+      (abort (usage-error "Invalid vertical align value"
+                          'label-alignment-set!)))
+    (KW_SetLabelAlignment label* halign hoffset valign voffset)))
+
+(define (button gui parent text geometry)
+  (and-let* ((gui* (gui-pointer gui))
+             (geometry* (rect-pointer geometry)))
+    (let ((parent* (and parent (widget-pointer parent))))
+      (if-let (widget* (KW_CreateButton gui* parent* text geometry*))
+        (make-widget widget*)
+        (abort (oom-error 'button))))))
+
+(define (editbox gui parent text geometry)
+  (and-let* ((gui* (gui-pointer gui))
+             (geometry* (rect-pointer geometry)))
+    (let ((parent* (and parent (widget-pointer parent))))
+      (if-let (widget* (KW_CreateEditbox gui* parent* text geometry*))
+        (make-widget widget*)
+        (abort (oom-error 'editbox))))))
+
+(define (editbox-font-set! editbox font)
+  (and-let* ((editbox* (widget-pointer editbox))
+             (font* (font-pointer font)))
+    (KW_SetEditboxFont editbox* font*)))
 
 )
