@@ -7,6 +7,7 @@
    rect rect-free!
    frame
    label label-icon-set!
+   button
    paint!)
 
 (import chicken scheme foreign)
@@ -16,6 +17,7 @@
 (foreign-declare "#include \"KW_gui.h\"
 #include \"KW_frame.h\"
 #include \"KW_label.h\"
+#include \"KW_button.h\"
 #include \"KW_renderdriver_sdl2.h\"")
 
 ;;; foreign functions
@@ -34,6 +36,7 @@
 (define KW_CreateFrame (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateFrame" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_CreateLabel (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateLabel" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_SetLabelIcon (foreign-lambda void "KW_SetLabelIcon" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_CreateButton (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateButton" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_Paint (foreign-lambda void "KW_Paint" (c-pointer (struct "KW_GUI"))))
 
 ;;; auxiliary records
@@ -100,14 +103,17 @@
   ;; TODO: can widget creation ever fail?
   (make-widget (KW_CreateFrame (gui-pointer gui) (and parent (widget-pointer parent)) (rect-pointer geometry))))
 
-(define (label gui parent caption geometry)
+(define (label gui parent text geometry)
   ;; TODO: deal with potential null pointers, evaluate
   ;; widget/specialized widget problem
   ;; TODO: can widget creation ever fail?
-  (make-widget (KW_CreateLabel (gui-pointer gui) (and parent (widget-pointer parent)) caption (rect-pointer geometry))))
+  (make-widget (KW_CreateLabel (gui-pointer gui) (and parent (widget-pointer parent)) text (rect-pointer geometry))))
 
 (define (label-icon-set! label clip)
   (KW_SetLabelIcon (widget-pointer label) (rect-pointer clip)))
+
+(define (button gui parent text geometry)
+  (make-widget (KW_CreateButton (gui-pointer gui) (and parent (widget-pointer parent)) text (rect-pointer geometry))))
 
 (define (paint! gui)
   (KW_Paint (gui-pointer gui)))
