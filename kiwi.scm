@@ -15,15 +15,14 @@
 
 ;;; headers
 
-(foreign-declare #<<EOF
+#>
 #include "KW_gui.h"
 #include "KW_frame.h"
 #include "KW_label.h"
 #include "KW_button.h"
 #include "KW_editbox.h"
 #include "KW_renderdriver_sdl2.h"
-EOF
-)
+<#
 
 ;;; foreign values
 
