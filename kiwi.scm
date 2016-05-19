@@ -4,7 +4,7 @@
    load-font release-font!
    init! quit!
    font-set!
-   rect rect-free!
+   rect release-rect!
    frame
    label label-icon-set! label-alignment-set!
    button
@@ -112,7 +112,7 @@
   ;; TODO: this can fail on insufficient memory
   (make-rect (CreateRect x y width height)))
 
-(define (rect-free! rect)
+(define (release-rect! rect)
   ;; TODO: set pointer to #f, deal with #f case
   (FreeRect (rect-pointer rect)))
 

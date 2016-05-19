@@ -77,5 +77,5 @@
 (kw:release-surface! driver tileset)
 (kw:release-font! driver font)
 (kw:release-render-driver! driver)
-(kw:rect-free! geometry)
-(kw:rect-free! icon-rect)
+(kw:release-rect! geometry)
+(kw:release-rect! icon-rect)
