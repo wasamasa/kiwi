@@ -1,5 +1,5 @@
 (module kiwi
-  (create-sdl2-render-driver
+  (create-sdl2-render-driver release-render-driver!
    load-surface release-surface!
    load-font release-font!
    init! quit!
@@ -21,6 +21,7 @@
 ;;; foreign functions
 
 (define KW_CreateSDL2RenderDriver (foreign-lambda (c-pointer (struct "KW_RenderDriver")) "KW_CreateSDL2RenderDriver" (c-pointer (struct "SDL_Renderer")) (c-pointer (struct "SDL_Window"))))
+(define KW_ReleaseRenderDriver (foreign-lambda void "KW_ReleaseRenderDriver" (c-pointer (struct "KW_RenderDriver"))))
 (define KW_LoadSurface (foreign-lambda (c-pointer (struct "KW_Surface")) "KW_LoadSurface" (c-pointer (struct "KW_RenderDriver")) c-string))
 (define KW_ReleaseSurface (foreign-lambda void "KW_ReleaseSurface" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Surface"))))
 (define KW_LoadFont (foreign-lambda (c-pointer (struct "KW_Font")) "KW_LoadFont" (c-pointer (struct "KW_RenderDriver")) c-string unsigned-int))
@@ -28,7 +29,7 @@
 (define KW_Init (foreign-lambda (c-pointer (struct "KW_GUI")) "KW_Init" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Surface"))))
 (define KW_Quit (foreign-lambda void "KW_Quit" (c-pointer (struct "KW_GUI"))))
 (define KW_SetFont (foreign-lambda void "KW_SetFont" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Font"))))
-(define CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((unsigned-int x) (unsigned-int y) (unsigned-int w) (unsigned-int h)) "KW_Rect *r = calloc(sizeof(*r), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
+(define CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h)) "KW_Rect *r = calloc(sizeof(KW_Rect), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
 (define FreeRect (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r)) "free(r);"))
 (define KW_CreateFrame (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateFrame" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_CreateLabel (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateLabel" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
@@ -49,6 +50,9 @@
   ;; TODO: this can fail on insufficient memory
   (let ((driver* (KW_CreateSDL2RenderDriver renderer window)))
     (make-driver driver*)))
+
+(define (release-render-driver! driver)
+  (KW_ReleaseRenderDriver (driver-pointer driver)))
 
 (define (load-surface driver filename)
   ;; TODO: this can fail if file not found

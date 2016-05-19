@@ -43,11 +43,11 @@
 (define tileset
   (kw:load-surface driver "tileset.png"))
 
-(define font
-  (kw:load-font driver "Fontin-Regular.ttf" 12))
-
 (define gui
   (kw:init! driver tileset))
+
+(define font
+  (kw:load-font driver "Fontin-Regular.ttf" 12))
 
 (kw:font-set! gui font)
 
@@ -60,10 +60,10 @@
 (define label
   (kw:label gui frame "Label with an icon :)" geometry))
 
-(define clip
+(define icon-rect
   (kw:rect 0 48 24 24))
 
-(kw:label-icon-set! label clip)
+(kw:label-icon-set! label icon-rect)
 
 (let loop ()
   (when (not (sdl2:quit-requested?))
@@ -76,5 +76,6 @@
 (kw:quit! gui)
 (kw:release-surface! driver tileset)
 (kw:release-font! driver font)
+(kw:release-render-driver! driver)
 (kw:rect-free! geometry)
-(kw:rect-free! clip)
+(kw:rect-free! icon-rect)
