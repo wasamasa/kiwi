@@ -6,8 +6,9 @@
    font-set!
    rect rect-free!
    frame
-   label label-icon-set!
+   label label-icon-set! label-alignment-set!
    button
+   editbox editbox-font-set!
    paint!)
 
 (import chicken scheme foreign)
@@ -19,9 +20,22 @@
 #include "KW_frame.h"
 #include "KW_label.h"
 #include "KW_button.h"
+#include "KW_editbox.h"
 #include "KW_renderdriver_sdl2.h"
 EOF
 )
+
+;;; foreign values
+
+;; enum KW_LabelHorizontalAlignment
+(define KW_LABEL_ALIGN_LEFT (foreign-value "KW_LABEL_ALIGN_LEFT" int))
+(define KW_LABEL_ALIGN_CENTER (foreign-value "KW_LABEL_ALIGN_CENTER" int))
+(define KW_LABEL_ALIGN_RIGHT (foreign-value "KW_LABEL_ALIGN_RIGHT" int))
+
+;; enum KW_LabelVerticalAlignment
+(define KW_LABEL_ALIGN_TOP (foreign-value "KW_LABEL_ALIGN_TOP" int))
+(define KW_LABEL_ALIGN_MIDDLE (foreign-value "KW_LABEL_ALIGN_MIDDLE" int))
+(define KW_LABEL_ALIGN_BOTTOM (foreign-value "KW_LABEL_ALIGN_BOTTOM" int))
 
 ;;; foreign functions
 
@@ -39,10 +53,14 @@ EOF
 (define KW_CreateFrame (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateFrame" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_CreateLabel (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateLabel" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_SetLabelIcon (foreign-lambda void "KW_SetLabelIcon" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_SetLabelAlignment (foreign-lambda void "KW_SetLabelAlignment" (c-pointer (struct "KW_Widget")) (enum "KW_LabelHorizontalAlignment") int (enum "KW_LabelVerticalAlignment") int))
 (define KW_CreateButton (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateButton" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
+(define KW_CreateEditbox (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateEditbox" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
+(define KW_SetEditboxFont (foreign-lambda void "KW_SetEditboxFont" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Font"))))
 (define KW_Paint (foreign-lambda void "KW_Paint" (c-pointer (struct "KW_GUI"))))
 
 ;;; auxiliary records
+
 (define-record driver pointer)
 (define-record surface pointer)
 (define-record font pointer)
@@ -115,8 +133,25 @@ EOF
 (define (label-icon-set! label clip)
   (KW_SetLabelIcon (widget-pointer label) (rect-pointer clip)))
 
+(define (label-alignment-set! label halign hoffset valign voffset)
+  (let ((halign (case halign
+                  ((left) KW_LABEL_ALIGN_LEFT)
+                  ((center) KW_LABEL_ALIGN_CENTER)
+                  ((right) KW_LABEL_ALIGN_RIGHT)))
+        (valign (case valign
+                  ((top) KW_LABEL_ALIGN_TOP)
+                  ((middle) KW_LABEL_ALIGN_MIDDLE)
+                  ((bottom) KW_LABEL_ALIGN_BOTTOM))))
+    (KW_SetLabelAlignment (widget-pointer label) halign hoffset valign voffset)))
+
 (define (button gui parent text geometry)
   (make-widget (KW_CreateButton (gui-pointer gui) (and parent (widget-pointer parent)) text (rect-pointer geometry))))
+
+(define (editbox gui parent text geometry)
+  (make-widget (KW_CreateEditbox (gui-pointer gui) (and parent (widget-pointer parent)) text (rect-pointer geometry))))
+
+(define (editbox-font-set! editbox font)
+  (KW_SetEditboxFont (widget-pointer editbox) (font-pointer font)))
 
 (define (paint! gui)
   (KW_Paint (gui-pointer gui)))
