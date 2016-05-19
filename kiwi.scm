@@ -14,11 +14,14 @@
 
 ;;; headers
 
-(foreign-declare "#include \"KW_gui.h\"
-#include \"KW_frame.h\"
-#include \"KW_label.h\"
-#include \"KW_button.h\"
-#include \"KW_renderdriver_sdl2.h\"")
+(foreign-declare #<<EOF
+#include "KW_gui.h"
+#include "KW_frame.h"
+#include "KW_label.h"
+#include "KW_button.h"
+#include "KW_renderdriver_sdl2.h"
+EOF
+)
 
 ;;; foreign functions
 
