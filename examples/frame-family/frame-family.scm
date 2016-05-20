@@ -1,16 +1,7 @@
 (use (prefix sdl2 sdl2:)
      (prefix kiwi kw:))
 
-;; HACK
-(define-record-type sdl2:renderer
-  (wrap-renderer pointer)
-  renderer?
-  (pointer %renderer-pointer %renderer-pointer-set!))
-
-(define-record-type sdl2:window
-  (wrap-window pointer)
-  window?
-  (pointer %window-pointer %window-pointer-set!))
+(import (only sdl2-internals unwrap-renderer unwrap-window))
 
 ;;; clean-up code
 
@@ -37,8 +28,8 @@
 (sdl2:render-draw-color-set! renderer bg)
 
 (define driver
-  (kw:create-sdl2-render-driver (%renderer-pointer renderer)
-                                (%window-pointer window)))
+  (kw:create-sdl2-render-driver (unwrap-renderer renderer)
+                                (unwrap-window window)))
 
 (define tileset
   (kw:load-surface driver "tileset.png"))
