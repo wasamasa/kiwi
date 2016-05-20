@@ -185,17 +185,17 @@
              (halign (case halign
                        ((left) KW_LABEL_ALIGN_LEFT)
                        ((center) KW_LABEL_ALIGN_CENTER)
-                       ((right) KW_LABEL_ALIGN_RIGHT)))
+                       ((right) KW_LABEL_ALIGN_RIGHT)
+                       (else
+                        (abort (usage-error "Invalid horizontal alignment value"
+                                            'label-alignment-set!)))))
              (valign (case valign
                        ((top) KW_LABEL_ALIGN_TOP)
                        ((middle) KW_LABEL_ALIGN_MIDDLE)
-                       ((bottom) KW_LABEL_ALIGN_BOTTOM))))
-    (when (not halign)
-      (abort (usage-error "Invalid horizontal align value"
-                          'label-alignment-set!)))
-    (when (not valign)
-      (abort (usage-error "Invalid vertical align value"
-                          'label-alignment-set!)))
+                       ((bottom) KW_LABEL_ALIGN_BOTTOM)
+                       (else
+                        (abort (usage-error "Invalid vertical alignment value"
+                                            'label-alignment-set!))))))
     (KW_SetLabelAlignment label* halign hoffset valign voffset)))
 
 (define (button gui parent text geometry)
