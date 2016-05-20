@@ -59,6 +59,7 @@
 (let loop ()
   (when (not (sdl2:quit-requested?))
     (sdl2:render-clear! renderer)
+    (kw:process-events! gui)
     (kw:paint! gui)
     (sdl2:delay! 1)
     (sdl2:render-present! renderer)

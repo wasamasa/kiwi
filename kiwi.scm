@@ -2,7 +2,7 @@
   (create-sdl2-render-driver release-render-driver!
    load-surface release-surface!
    load-font release-font!
-   init! paint! quit!
+   init! process-events! paint! quit!
    font-set!
    rect release-rect!
    frame
@@ -45,6 +45,7 @@
 (define KW_LoadFont (foreign-lambda (c-pointer (struct "KW_Font")) "KW_LoadFont" (c-pointer (struct "KW_RenderDriver")) c-string unsigned-int))
 (define KW_ReleaseFont (foreign-lambda void "KW_ReleaseFont" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Font"))))
 (define KW_Init (foreign-lambda (c-pointer (struct "KW_GUI")) "KW_Init" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Surface"))))
+(define KW_ProcessEvents (foreign-safe-lambda void "KW_ProcessEvents" (c-pointer (struct "KW_GUI"))))
 (define KW_Paint (foreign-lambda void "KW_Paint" (c-pointer (struct "KW_GUI"))))
 (define KW_Quit (foreign-lambda void "KW_Quit" (c-pointer (struct "KW_GUI"))))
 (define KW_SetFont (foreign-lambda void "KW_SetFont" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Font"))))
@@ -129,8 +130,13 @@
       (make-gui gui*)
       (abort (oom-error 'init!)))))
 
+(define (process-events! gui)
+  (and-let* ((gui* (gui-pointer gui)))
+    (KW_ProcessEvents gui*)))
+
 (define (paint! gui)
-  (KW_Paint (gui-pointer gui)))
+  (and-let* ((gui* (gui-pointer gui)))
+    (KW_Paint gui*)))
 
 (define (quit! gui)
   (and-let* ((gui* (gui-pointer gui)))
