@@ -158,22 +158,27 @@
     (FreeRect rect*)
     (rect-pointer-set! rect #f)))
 
-(define (frame gui parent geometry)
+;;; widgets
+
+(define widget-table (make-hash-table))
+
+(define (define-widget type gui parent geometry proc)
   (and-let* ((gui* (gui-pointer gui))
              (geometry* (rect-pointer geometry)))
     (let ((parent* (and parent (widget-pointer parent))))
-      (if-let (widget* (KW_CreateFrame gui* parent* geometry*))
-        ;; NOTE: freeing widgets is *not* necessary
-        (make-widget widget*)
-        (abort (oom-error 'frame))))))
+      (if-let (widget* (proc gui* parent* geometry*))
+        (let* ((handlers (make-hash-table eqv? eqv?-hash))
+               (widget (make-widget handlers widget*)))
+          (hash-table-set! widget-table widget* widget)
+          widget)
+        (abort (oom-error type))))))
+
+(define (frame gui parent geometry)
+  (define-widget 'frame gui parent geometry KW_CreateFrame))
 
 (define (label gui parent text geometry)
-  (and-let* ((gui* (gui-pointer gui))
-             (geometry* (rect-pointer geometry)))
-    (let ((parent* (and parent (widget-pointer parent))))
-      (if-let (widget* (KW_CreateLabel gui* parent* text geometry*))
-        (make-widget widget*)
-        (abort (oom-error 'label))))))
+  (define-widget 'label gui parent geometry
+    (cut KW_CreateLabel <> <> text <>)))
 
 (define (label-icon-set! label clip)
   (and-let* ((label* (widget-pointer label))
@@ -199,20 +204,12 @@
     (KW_SetLabelAlignment label* halign hoffset valign voffset)))
 
 (define (button gui parent text geometry)
-  (and-let* ((gui* (gui-pointer gui))
-             (geometry* (rect-pointer geometry)))
-    (let ((parent* (and parent (widget-pointer parent))))
-      (if-let (widget* (KW_CreateButton gui* parent* text geometry*))
-        (make-widget widget*)
-        (abort (oom-error 'button))))))
+  (define-widget 'button gui parent geometry
+    (cut KW_CreateButton <> <> text <>)))
 
 (define (editbox gui parent text geometry)
-  (and-let* ((gui* (gui-pointer gui))
-             (geometry* (rect-pointer geometry)))
-    (let ((parent* (and parent (widget-pointer parent))))
-      (if-let (widget* (KW_CreateEditbox gui* parent* text geometry*))
-        (make-widget widget*)
-        (abort (oom-error 'editbox))))))
+  (define-widget 'editbox gui parent geometry
+    (cut KW_CreateEditbox <> <> text <>)))
 
 (define (editbox-font-set! editbox font)
   (and-let* ((editbox* (widget-pointer editbox))
