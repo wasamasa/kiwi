@@ -24,18 +24,14 @@
 (define-values (window renderer)
   (sdl2:create-window-and-renderer! width height))
 
-(define bg (sdl2:make-color 100 100 200))
-(sdl2:render-draw-color-set! renderer bg)
+(sdl2:render-draw-color-set! renderer (sdl2:make-color 100 100 200))
 
 (define driver
   (kw:create-sdl2-render-driver (unwrap-renderer renderer)
                                 (unwrap-window window)))
 
-(define tileset
-  (kw:load-surface driver "tileset.png"))
-
 (define gui
-  (kw:init! driver tileset))
+  (kw:init! driver (kw:load-surface driver "tileset.png")))
 
 (define fontin
   (kw:load-font driver "Fontin-Regular.ttf" 12))
@@ -45,52 +41,31 @@
 
 (kw:font-set! gui fontin)
 
-(define frame-geometry
-  (kw:rect 10 10 (- width 20) (- height 20)))
-
 (define frame
-  (kw:frame gui #f frame-geometry))
+  (kw:frame gui #f (kw:rect 10 10 (- width 20) (- height 20))))
 
-(define button-geometry
-  (kw:rect 120 110 170 30))
-
-(kw:button gui frame "Friendship? Again?!" button-geometry)
-
-(define inner-frame-geometry
-  (kw:rect 10 10 (- width 40) 100))
+(kw:button gui frame "Friendship? Again?!" (kw:rect 120 110 170 30))
 
 (define inner-frame
-  (kw:frame gui frame inner-frame-geometry))
-
-(define content-editbox-geometry
-  (kw:rect 120 20 150 30))
+  (kw:frame gui frame (kw:rect 10 10 (- width 40) 100)))
 
 (define content-editbox
-  (kw:editbox gui inner-frame "Editbox #1" content-editbox-geometry))
+  (kw:editbox gui inner-frame "Editbox #1" (kw:rect 120 20 150 30)))
 
 (kw:editbox-font-set! content-editbox dejavu)
 
-(define content-label-geometry
-  (kw:rect 10 20 110 30))
-
 (define content-label
-  (kw:label gui inner-frame "Type your destiny:" content-label-geometry))
+  (kw:label gui inner-frame "Type your destiny:" (kw:rect 10 20 110 30)))
 
 (kw:label-alignment-set! content-label 'right 0 'middle 0)
 
-(define confirmation-editbox-geometry
-  (kw:rect 120 50 150 30))
-
 (define confirmation-editbox
-  (kw:editbox gui inner-frame "Editbox #2" confirmation-editbox-geometry))
+  (kw:editbox gui inner-frame "Editbox #2" (kw:rect 120 50 150 30)))
 
 (kw:editbox-font-set! confirmation-editbox dejavu)
 
-(define confirmation-label-geometry
-  (kw:rect 10 50 110 30))
-
 (define confirmation-label
-  (kw:label gui inner-frame "Again:" confirmation-label-geometry))
+  (kw:label gui inner-frame "Again:" (kw:rect 10 50 110 30)))
 
 (kw:label-alignment-set! confirmation-label 'right 0 'middle 0)
 

@@ -24,23 +24,16 @@
 (define-values (window renderer)
   (sdl2:create-window-and-renderer! width height))
 
-(define bg (sdl2:make-color 100 100 100))
-(sdl2:render-draw-color-set! renderer bg)
+(sdl2:render-draw-color-set! renderer (sdl2:make-color 100 100 100))
 
 (define driver
   (kw:create-sdl2-render-driver (unwrap-renderer renderer)
                                 (unwrap-window window)))
 
-(define tileset
-  (kw:load-surface driver "tileset.png"))
-
 (define gui
-  (kw:init! driver tileset))
+  (kw:init! driver (kw:load-surface driver "tileset.png")))
 
-(define font
-  (kw:load-font driver "Fontin-Regular.ttf" 12))
-
-(kw:font-set! gui font)
+(kw:font-set! gui (kw:load-font driver "Fontin-Regular.ttf" 12))
 
 (define geometry
   (kw:rect 0 0 width height))
@@ -51,10 +44,7 @@
 (define label
   (kw:label gui frame "Label with an icon :)" geometry))
 
-(define icon-rect
-  (kw:rect 0 48 24 24))
-
-(kw:label-icon-set! label icon-rect)
+(kw:label-icon-set! label (kw:rect 0 48 24 24))
 
 (let loop ()
   (when (not (sdl2:quit-requested?))

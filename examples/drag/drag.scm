@@ -49,47 +49,31 @@
 (define-values (window renderer)
   (sdl2:create-window-and-renderer! width height))
 
-(define bg (sdl2:make-color 200 100 100))
-(sdl2:render-draw-color-set! renderer bg)
+(sdl2:render-draw-color-set! renderer (sdl2:make-color 200 100 100))
 
 (define driver
   (kw:create-sdl2-render-driver (unwrap-renderer renderer)
                                 (unwrap-window window)))
 
-(define tileset
-  (kw:load-surface driver "tileset.png"))
-
 (define gui
-  (kw:init! driver tileset))
+  (kw:init! driver (kw:load-surface driver "tileset.png")))
 
-(define font
-  (kw:load-font driver "Fontin-Regular.ttf" 12))
-
-(kw:font-set! gui font)
-
-(define frame-geometry
-  (kw:rect 50 50 100 100))
+(kw:font-set! gui (kw:load-font driver "Fontin-Regular.ttf" 12))
 
 (define frame
-  (kw:frame gui #f frame-geometry))
+  (kw:frame gui #f (kw:rect 50 50 100 100)))
 
 (kw:handler-set! frame 'drag drag)
 
-(define a-geometry
-  (kw:rect 0 0 (/ width 4) (/ height 4)))
-
 (define a
-  (kw:button gui frame "Yay" a-geometry))
+  (kw:button gui frame "Yay" (kw:rect 0 0 (/ width 4) (/ height 4))))
 
 (kw:handler-set! a 'drag-start drag-start)
 (kw:handler-set! a 'drag-stop drag-stop)
 (kw:handler-set! a 'drag drag)
 
-(define b-geometry
-  (kw:rect 10 10 (/ width 4) (/ height 4)))
-
 (define b
-  (kw:button gui frame "Yay" b-geometry))
+  (kw:button gui frame "Yay" (kw:rect 10 10 (/ width 4) (/ height 4))))
 
 (kw:handler-set! b 'drag-start drag-start)
 (kw:handler-set! b 'drag-stop drag-stop)

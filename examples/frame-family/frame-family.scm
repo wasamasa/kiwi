@@ -24,23 +24,16 @@
 (define-values (window renderer)
   (sdl2:create-window-and-renderer! width height))
 
-(define bg (sdl2:make-color 200 100 100))
-(sdl2:render-draw-color-set! renderer bg)
+(sdl2:render-draw-color-set! renderer (sdl2:make-color 200 100 100))
 
 (define driver
   (kw:create-sdl2-render-driver (unwrap-renderer renderer)
                                 (unwrap-window window)))
 
-(define tileset
-  (kw:load-surface driver "tileset.png"))
-
 (define gui
-  (kw:init! driver tileset))
+  (kw:init! driver (kw:load-surface driver "tileset.png")))
 
-(define font
-  (kw:load-font driver "Fontin-Regular.ttf" 12))
-
-(kw:font-set! gui font)
+(kw:font-set! gui (kw:load-font driver "Fontin-Regular.ttf" 12))
 
 (define frame-geometry
   (kw:rect 10 10 (/ width 2) (/ height 2)))
