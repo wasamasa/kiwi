@@ -4,11 +4,12 @@
    load-font release-font!
    init! process-events! paint! quit!
    font-set!
-   rect release-rect!
+   rect release-rect! rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    frame
    label label-icon-set! label-alignment-set!
    button
    editbox editbox-font-set!
+   widget-geometry widget-geometry-set!
    handler-set!)
 
 (import chicken scheme foreign)
@@ -50,8 +51,6 @@
 (define KW_Paint (foreign-lambda void "KW_Paint" (c-pointer (struct "KW_GUI"))))
 (define KW_Quit (foreign-lambda void "KW_Quit" (c-pointer (struct "KW_GUI"))))
 (define KW_SetFont (foreign-lambda void "KW_SetFont" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Font"))))
-(define CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h)) "KW_Rect *r = calloc(sizeof(KW_Rect), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
-(define FreeRect (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r)) "free(r);"))
 (define KW_CreateFrame (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateFrame" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_CreateLabel (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateLabel" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_SetLabelIcon (foreign-lambda void "KW_SetLabelIcon" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
@@ -62,6 +61,24 @@
 (define KW_AddWidgetDragStartHandler (foreign-lambda void "KW_AddWidgetDragStartHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int))))
 (define KW_AddWidgetDragHandler (foreign-lambda void "KW_AddWidgetDragHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int int int))))
 (define KW_AddWidgetDragStopHandler (foreign-lambda void "KW_AddWidgetDragStopHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int))))
+
+;;; foreign rect helpers
+(define KW_CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h)) "KW_Rect *r = calloc(sizeof(KW_Rect), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
+(define KW_DestroyRect (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r)) "free(r);"))
+
+(define KW_GetWidgetGeometry (foreign-lambda void "KW_GetWidgetGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_GetWidgetAbsoluteGeometry (foreign-lambda void "KW_GetWidgetAbsoluteGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_SetWidgetGeometry (foreign-lambda void "KW_SetWidgetGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+
+(define KW_Rect->x (foreign-lambda* int (((c-pointer (struct "KW_Rect")) r)) "C_return(r->x);"))
+(define KW_Rect->y (foreign-lambda* int (((c-pointer (struct "KW_Rect")) r)) "C_return(r->y);"))
+(define KW_Rect->w (foreign-lambda* int (((c-pointer (struct "KW_Rect")) r)) "C_return(r->w);"))
+(define KW_Rect->h (foreign-lambda* int (((c-pointer (struct "KW_Rect")) r)) "C_return(r->h);"))
+
+(define KW_Rect->x-set! (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r) (int x)) "r->x = x;"))
+(define KW_Rect->y-set! (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r) (int y)) "r->y = y;"))
+(define KW_Rect->w-set! (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r) (int w)) "r->w = w;"))
+(define KW_Rect->h-set! (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r) (int h)) "r->h = h;"))
 
 ;;; auxiliary records
 
@@ -105,7 +122,7 @@
 (define (usage-error message location)
   (define-error location message 'usage))
 
-;;; API
+;;; GUI setup and teardown
 
 (define (create-sdl2-render-driver renderer window)
   (if-let (driver* (KW_CreateSDL2RenderDriver renderer window))
@@ -169,15 +186,57 @@
              (font* (font-pointer font)))
     (KW_SetFont gui* font*)))
 
-(define (rect x y width height)
-  (if-let (rect* (CreateRect x y width height))
+;;; rects
+
+(define (rect x y w h)
+  (if-let (rect* (KW_CreateRect x y w h))
     (set-finalizer! (make-rect rect*) release-rect!)
     (abort (oom-error 'rect))))
 
 (define (release-rect! rect)
   (and-let* ((rect* (rect-pointer rect)))
-    (FreeRect rect*)
+    (KW_DestroyRect rect*)
     (rect-pointer-set! rect #f)))
+
+(define (rect-x rect)
+  (and-let* ((rect* (rect-pointer rect)))
+    (KW_Rect->x rect*)))
+
+(define (rect-x-set! rect x)
+  (and-let* ((rect* (rect-pointer rect)))
+    (KW_Rect->x-set! rect* x)))
+
+(define rect-x (getter-with-setter rect-x rect-x-set!))
+
+(define (rect-y rect)
+  (and-let* ((rect* (rect-pointer rect)))
+    (KW_Rect->y rect*)))
+
+(define (rect-y-set! rect y)
+  (and-let* ((rect* (rect-pointer rect)))
+    (KW_Rect->y-set! rect* y)))
+
+(define rect-y (getter-with-setter rect-y rect-y-set!))
+
+(define (rect-w rect)
+  (and-let* ((rect* (rect-pointer rect)))
+    (KW_Rect->w rect*)))
+
+(define (rect-w-set! rect w)
+  (and-let* ((rect* (rect-pointer rect)))
+    (KW_Rect->w-set! rect* w)))
+
+(define rect-w (getter-with-setter rect-w rect-w-set!))
+
+(define (rect-h rect)
+  (and-let* ((rect* (rect-pointer rect)))
+    (KW_Rect->h rect*)))
+
+(define (rect-h-set! rect h)
+  (and-let* ((rect* (rect-pointer rect)))
+    (KW_Rect->h-set! rect* h)))
+
+(define rect-h (getter-with-setter rect-h rect-h-set!))
 
 ;;; widgets
 
@@ -236,6 +295,22 @@
   (and-let* ((editbox* (widget-pointer editbox))
              (font* (font-pointer font)))
     (KW_SetEditboxFont editbox* font*)))
+
+(define (widget-geometry widget #!optional absolute?)
+  (and-let* ((widget* (widget-pointer widget)))
+    (let* ((geometry (rect 0 0 0 0))
+           (geometry* (rect-pointer geometry)))
+      (if absolute?
+          (KW_GetWidgetAbsoluteGeometry widget* geometry*)
+          (KW_GetWidgetGeometry widget* geometry*))
+      geometry)))
+
+(define (widget-geometry-set! widget geometry)
+  (and-let* ((widget* (widget-pointer widget))
+             (geometry* (rect-pointer geometry)))
+    (KW_SetWidgetGeometry widget* geometry*)))
+
+(define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
 
 (define (handler-set! widget type proc)
   (and-let* ((widget* (widget-pointer widget)))
