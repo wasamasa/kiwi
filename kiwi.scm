@@ -104,11 +104,9 @@
 (define KW_RectFillParentHorizontally
   (foreign-lambda* void (((c-pointer (struct "KW_Rect")) outer) (pointer-vector rects_vector) (int rects_vector_length) (u32vector weights_vector) (int weights_vector_length) (unsigned-int count) (int padding) ((enum "KW_RectVerticalAlignment") align))
     "KW_Rect *rects[rects_vector_length];"
-    "for (int i = 0; i < rects_vector_length; i++)"
-    "  rects[i] = (KW_Rect *) rects_vector[i];"
+    "memcpy(rects, rects_vector, rects_vector_length * sizeof(KW_Rect *));"
     "unsigned int weights[weights_vector_length];"
-    "for (int i = 0; i < weights_vector_length; i++)"
-    "  weights[i] = (unsigned int) weights_vector[i];"
+    "memcpy(weights, weights_vector, weights_vector_length * sizeof(unsigned int));"
     "KW_RectFillParentHorizontally(outer, rects, weights, count, padding, align);"))
 
 ;;; auxiliary records
