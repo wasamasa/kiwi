@@ -8,6 +8,7 @@
    rect release-rect! rect-center-in-parent! rect-fill-parent-horizontally! rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    widget-tileset-surface-set!
    frame
+   scrollbox
    label label-icon-set! label-alignment-set!
    button
    editbox editbox-font-set!
@@ -23,6 +24,7 @@
 #include "KW_gui.h"
 #include "KW_rect.h"
 #include "KW_frame.h"
+#include "KW_scrollbox.h"
 #include "KW_label.h"
 #include "KW_button.h"
 #include "KW_editbox.h"
@@ -69,6 +71,7 @@
 (define KW_SetTilesetSurface (foreign-lambda void "KW_SetTilesetSurface" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Surface"))))
 (define KW_SetWidgetTilesetSurface (foreign-lambda void "KW_SetWidgetTilesetSurface" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Surface"))))
 (define KW_CreateFrame (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateFrame" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_CreateScrollbox (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateScrollbox" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_CreateLabel (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateLabel" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_SetLabelIcon (foreign-lambda void "KW_SetLabelIcon" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_SetLabelAlignment (foreign-lambda void "KW_SetLabelAlignment" (c-pointer (struct "KW_Widget")) (enum "KW_LabelHorizontalAlignment") int (enum "KW_LabelVerticalAlignment") int))
@@ -334,6 +337,9 @@
 
 (define (frame gui parent geometry)
   (define-widget 'frame gui parent geometry KW_CreateFrame))
+
+(define (scrollbox gui parent geometry)
+  (define-widget 'scrollbox gui parent geometry KW_CreateScrollbox))
 
 (define (label gui parent text geometry)
   (define-widget 'label gui parent geometry
