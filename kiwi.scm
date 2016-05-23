@@ -58,9 +58,13 @@
 (define KW_CreateButton (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateButton" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_CreateEditbox (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateEditbox" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_SetEditboxFont (foreign-lambda void "KW_SetEditboxFont" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Font"))))
+(define KW_AddWidgetMouseOverHandler (foreign-lambda void "KW_AddWidgetMouseOverHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget"))))))
+(define KW_AddWidgetMouseLeaveHandler (foreign-lambda void "KW_AddWidgetMouseLeaveHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget"))))))
+(define KW_AddWidgetMouseDownHandler (foreign-lambda void "KW_AddWidgetMouseDownHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int))))
+(define KW_AddWidgetMouseUpHandler (foreign-lambda void "KW_AddWidgetMouseUpHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int))))
 (define KW_AddWidgetDragStartHandler (foreign-lambda void "KW_AddWidgetDragStartHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int))))
-(define KW_AddWidgetDragHandler (foreign-lambda void "KW_AddWidgetDragHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int int int))))
 (define KW_AddWidgetDragStopHandler (foreign-lambda void "KW_AddWidgetDragStopHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int))))
+(define KW_AddWidgetDragHandler (foreign-lambda void "KW_AddWidgetDragHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int int int))))
 
 ;;; foreign rect helpers
 (define KW_CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h)) "KW_Rect *r = calloc(sizeof(KW_Rect), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
@@ -97,14 +101,26 @@
          (handler (hash-table-ref handlers type)))
     (apply handler widget args)))
 
+(define-external (kiwi_MouseOverHandler ((c-pointer (struct "KW_Widget")) widget*)) void
+  (dispatch-event! widget* 'mouse-over))
+
+(define-external (kiwi_MouseLeaveHandler ((c-pointer (struct "KW_Widget")) widget*)) void
+  (dispatch-event! widget* 'mouse-leave))
+
+(define-external (kiwi_MouseDownHandler ((c-pointer (struct "KW_Widget")) widget*) (int button)) void
+  (dispatch-event! widget* 'mouse-down button))
+
+(define-external (kiwi_MouseUpHandler ((c-pointer (struct "KW_Widget")) widget*) (int button)) void
+  (dispatch-event! widget* 'mouse-up button))
+
 (define-external (kiwi_DragStartHandler ((c-pointer (struct "KW_Widget")) widget*) (int x) (int y)) void
   (dispatch-event! widget* 'drag-start x y))
 
-(define-external (kiwi_DragHandler ((c-pointer (struct "KW_Widget")) widget*) (int x) (int y) (int relx) (int rely)) void
-  (dispatch-event! widget* 'drag x y relx rely))
-
 (define-external (kiwi_DragStopHandler ((c-pointer (struct "KW_Widget")) widget*) (int x) (int y)) void
   (dispatch-event! widget* 'drag-stop x y))
+
+(define-external (kiwi_DragHandler ((c-pointer (struct "KW_Widget")) widget*) (int x) (int y) (int relx) (int rely)) void
+  (dispatch-event! widget* 'drag x y relx rely))
 
 ;;; errors
 
@@ -316,15 +332,27 @@
   (and-let* ((widget* (widget-pointer widget)))
     (let ((handlers (widget-handlers widget)))
       (case type
+        ((mouse-over)
+         (hash-table-set! handlers 'mouse-over proc)
+         (KW_AddWidgetMouseOverHandler widget* (location kiwi_MouseOverHandler)))
+        ((mouse-leave)
+         (hash-table-set! handlers 'mouse-leave proc)
+         (KW_AddWidgetMouseLeaveHandler widget* (location kiwi_MouseLeaveHandler)))
+        ((mouse-down)
+         (hash-table-set! handlers 'mouse-down proc)
+         (KW_AddWidgetMouseDownHandler widget* (location kiwi_MouseDownHandler)))
+        ((mouse-up)
+         (hash-table-set! handlers 'mouse-up proc)
+         (KW_AddWidgetMouseUpHandler widget* (location kiwi_MouseUpHandler)))
         ((drag-start)
          (hash-table-set! handlers 'drag-start proc)
          (KW_AddWidgetDragStartHandler widget* (location kiwi_DragStartHandler)))
-        ((drag)
-         (hash-table-set! handlers 'drag proc)
-         (KW_AddWidgetDragHandler widget* (location kiwi_DragHandler)))
         ((drag-stop)
          (hash-table-set! handlers 'drag-stop proc)
          (KW_AddWidgetDragStopHandler widget* (location kiwi_DragStopHandler)))
+        ((drag)
+         (hash-table-set! handlers 'drag proc)
+         (KW_AddWidgetDragHandler widget* (location kiwi_DragHandler)))
         (else
          (abort (usage-error "Unsupported event handler type" 'handler-set!)))))))
 
