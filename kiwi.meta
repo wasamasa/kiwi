@@ -2,5 +2,5 @@
  (author "Vasilij Schneidermann")
  (license "BSD")
  (category "graphics")
- (depends)
+ (depends clojurian)
  (foreign-depends "KW" "SDL2"))
