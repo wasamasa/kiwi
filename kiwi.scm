@@ -3,8 +3,10 @@
    load-surface release-surface!
    load-font release-font!
    init! process-events! paint! quit!
+   tileset-surface-set!
    font-set!
    rect release-rect! rect-center-in-parent! rect-fill-parent-horizontally! rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
+   widget-tileset-surface-set!
    frame
    label label-icon-set! label-alignment-set!
    button
@@ -64,6 +66,8 @@
 (define KW_Paint (foreign-lambda void "KW_Paint" (c-pointer (struct "KW_GUI"))))
 (define KW_Quit (foreign-lambda void "KW_Quit" (c-pointer (struct "KW_GUI"))))
 (define KW_SetFont (foreign-lambda void "KW_SetFont" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Font"))))
+(define KW_SetTilesetSurface (foreign-lambda void "KW_SetTilesetSurface" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Surface"))))
+(define KW_SetWidgetTilesetSurface (foreign-lambda void "KW_SetWidgetTilesetSurface" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Surface"))))
 (define KW_CreateFrame (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateFrame" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_CreateLabel (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateLabel" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_SetLabelIcon (foreign-lambda void "KW_SetLabelIcon" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
@@ -227,6 +231,11 @@
              (font* (font-pointer font)))
     (KW_SetFont gui* font*)))
 
+(define (tileset-surface-set! gui tileset)
+  (and-let* ((gui* (gui-pointer gui))
+             (tileset* (surface-pointer tileset)))
+    (KW_SetTilesetSurface gui* tileset*)))
+
 ;;; rects
 
 (define (rect x y w h)
@@ -317,6 +326,11 @@
           (hash-table-set! widget-table widget* widget)
           widget)
         (abort (oom-error type))))))
+
+(define (widget-tileset-surface-set! widget tileset)
+  (and-let* ((widget* (widget-pointer widget))
+             (tileset* (surface-pointer tileset)))
+    (KW_SetWidgetTilesetSurface widget* tileset*)))
 
 (define (frame gui parent geometry)
   (define-widget 'frame gui parent geometry KW_CreateFrame))
