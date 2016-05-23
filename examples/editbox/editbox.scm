@@ -18,6 +18,11 @@
 
 ;;; actual example
 
+(define quit? #f)
+
+(define (ok-clicked widget _button)
+  (set! quit? #t))
+
 (define width 320)
 (define height 240)
 
@@ -33,44 +38,40 @@
 (define gui
   (kw:init! driver (kw:load-surface driver "tileset.png")))
 
-(define fontin
-  (kw:load-font driver "Fontin-Regular.ttf" 12))
+(kw:font-set! gui (kw:load-font driver "DejaVuSans.ttf" 12))
 
-(define dejavu
-  (kw:load-font driver "DejaVuSans.ttf" 12))
+(define window-geometry
+  (kw:rect 0 0 width height))
 
-(kw:font-set! gui fontin)
+(define frame-geometry
+  (kw:rect 10 10 (- width 20) (- height 20)))
+
+(kw:rect-center-in-parent! window-geometry frame-geometry)
 
 (define frame
-  (kw:frame gui #f (kw:rect 10 10 (- width 20) (- height 20))))
+  (kw:frame gui #f frame-geometry))
 
-(kw:button gui frame "Friendship? Again?!" (kw:rect 120 110 170 30))
+(define label-geometry
+  (kw:rect 0 100 60 30))
 
-(define inner-frame
-  (kw:frame gui frame (kw:rect 10 10 (- width 40) 100)))
+(define editbox-geometry
+  (kw:rect 0 100 100 30))
 
-(define content-editbox
-  (kw:editbox gui inner-frame "Editbox #1" (kw:rect 120 20 150 30)))
+(kw:rect-fill-parent-horizontally! frame-geometry
+                                   (list label-geometry editbox-geometry)
+                                   '(1 4) 2 10 'middle)
 
-(kw:editbox-font-set! content-editbox dejavu)
+(kw:label gui frame "Editbox example" (kw:rect 0 10 300 30))
+(kw:label gui frame "Label" label-geometry)
+(kw:editbox gui frame "Edit me!" editbox-geometry)
 
-(define content-label
-  (kw:label gui inner-frame "Type your destiny:" (kw:rect 10 20 110 30)))
+(define ok-button
+  (kw:button gui frame "OK" (kw:rect 250 170 40 40)))
 
-(kw:label-alignment-set! content-label 'right 0 'middle 0)
-
-(define confirmation-editbox
-  (kw:editbox gui inner-frame "Editbox #2" (kw:rect 120 50 150 30)))
-
-(kw:editbox-font-set! confirmation-editbox dejavu)
-
-(define confirmation-label
-  (kw:label gui inner-frame "Again:" (kw:rect 10 50 110 30)))
-
-(kw:label-alignment-set! confirmation-label 'right 0 'middle 0)
+(kw:handler-set! ok-button 'mouse-down ok-clicked)
 
 (let loop ()
-  (when (not (sdl2:quit-requested?))
+  (when (and (not (sdl2:quit-requested?)) (not quit?))
     (sdl2:render-clear! renderer)
     (kw:process-events! gui)
     (kw:paint! gui)

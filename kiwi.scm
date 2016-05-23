@@ -4,7 +4,7 @@
    load-font release-font!
    init! process-events! paint! quit!
    font-set!
-   rect release-rect! rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
+   rect release-rect! rect-center-in-parent! rect-fill-parent-horizontally! rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    frame
    label label-icon-set! label-alignment-set!
    button
@@ -13,12 +13,13 @@
    handler-set!)
 
 (import chicken scheme foreign)
-(use clojurian-syntax srfi-69 lolevel)
+(use clojurian-syntax srfi-69 lolevel srfi-4)
 
 ;;; headers
 
 #>
 #include "KW_gui.h"
+#include "KW_rect.h"
 #include "KW_frame.h"
 #include "KW_label.h"
 #include "KW_button.h"
@@ -37,6 +38,18 @@
 (define KW_LABEL_ALIGN_TOP (foreign-value "KW_LABEL_ALIGN_TOP" int))
 (define KW_LABEL_ALIGN_MIDDLE (foreign-value "KW_LABEL_ALIGN_MIDDLE" int))
 (define KW_LABEL_ALIGN_BOTTOM (foreign-value "KW_LABEL_ALIGN_BOTTOM" int))
+
+;; enum KW_RectHorizontalAlignment
+(define KW_RECT_ALIGN_HORIZONTALLY_NONE (foreign-value "KW_RECT_ALIGN_HORIONTALLY_NONE" int)) ; ugh
+(define KW_RECT_ALIGN_LEFT (foreign-value "KW_RECT_ALIGN_LEFT" int))
+(define KW_RECT_ALIGN_CENTER (foreign-value "KW_RECT_ALIGN_CENTER" int))
+(define KW_RECT_ALIGN_RIGHT (foreign-value "KW_RECT_ALIGN_RIGHT" int))
+
+;; enum KW_RectVerticalAlignment
+(define KW_RECT_ALIGN_VERTICALLY_NONE (foreign-value "KW_RECT_ALIGN_VERTICALLY_NONE" int))
+(define KW_RECT_ALIGN_TOP (foreign-value "KW_RECT_ALIGN_TOP" int))
+(define KW_RECT_ALIGN_MIDDLE (foreign-value "KW_RECT_ALIGN_MIDDLE" int))
+(define KW_RECT_ALIGN_BOTTOM (foreign-value "KW_RECT_ALIGN_BOTTOM" int))
 
 ;;; foreign functions
 
@@ -61,6 +74,7 @@
 (define KW_GetWidgetGeometry (foreign-lambda void "KW_GetWidgetGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_GetWidgetAbsoluteGeometry (foreign-lambda void "KW_GetWidgetAbsoluteGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_SetWidgetGeometry (foreign-lambda void "KW_SetWidgetGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_RectCenterInParent (foreign-lambda void "KW_RectCenterInParent" (c-pointer (struct "KW_Rect")) (c-pointer (struct "KW_Rect"))))
 (define KW_AddWidgetMouseOverHandler (foreign-lambda void "KW_AddWidgetMouseOverHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget"))))))
 (define KW_AddWidgetMouseLeaveHandler (foreign-lambda void "KW_AddWidgetMouseLeaveHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget"))))))
 (define KW_AddWidgetMouseDownHandler (foreign-lambda void "KW_AddWidgetMouseDownHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int))))
@@ -71,7 +85,11 @@
 
 ;;; foreign rect helpers
 
-(define KW_CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h)) "KW_Rect *r = calloc(sizeof(KW_Rect), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
+(define KW_CreateRect
+  (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h))
+    "KW_Rect *r = calloc(sizeof(KW_Rect), 1);"
+    "r->x = x; r->y = y; r->w = w; r->h = h;"
+    "C_return(r);"))
 
 (define KW_Rect->x (foreign-lambda* int (((c-pointer (struct "KW_Rect")) r)) "C_return(r->x);"))
 (define KW_Rect->y (foreign-lambda* int (((c-pointer (struct "KW_Rect")) r)) "C_return(r->y);"))
@@ -82,6 +100,16 @@
 (define KW_Rect->y-set! (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r) (int y)) "r->y = y;"))
 (define KW_Rect->w-set! (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r) (int w)) "r->w = w;"))
 (define KW_Rect->h-set! (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r) (int h)) "r->h = h;"))
+
+(define KW_RectFillParentHorizontally
+  (foreign-lambda* void (((c-pointer (struct "KW_Rect")) outer) (pointer-vector rects_vector) (int rects_vector_length) (u32vector weights_vector) (int weights_vector_length) (unsigned-int count) (int padding) ((enum "KW_RectVerticalAlignment") align))
+    "KW_Rect *rects[rects_vector_length];"
+    "for (int i = 0; i < rects_vector_length; i++)"
+    "  rects[i] = (KW_Rect *) rects_vector[i];"
+    "unsigned int weights[weights_vector_length];"
+    "for (int i = 0; i < weights_vector_length; i++)"
+    "  weights[i] = (unsigned int) weights_vector[i];"
+    "KW_RectFillParentHorizontally(outer, rects, weights, count, padding, align);"))
 
 ;;; auxiliary records
 
@@ -212,6 +240,30 @@
   (and-let* ((rect* (rect-pointer rect)))
     (free rect*)
     (rect-pointer-set! rect #f)))
+
+(define (rect-center-in-parent! outer inner)
+  (and-let* ((inner* (rect-pointer inner))
+             (outer* (rect-pointer outer)))
+    (KW_RectCenterInParent inner* outer*)))
+
+(define (rect-fill-parent-horizontally! outer rects weights count padding valign)
+  (and-let* ((outer* (rect-pointer outer)))
+    (let* ((rect-pointers (map rect-pointer rects))
+           (rects-vector (apply pointer-vector rect-pointers))
+           (rects-vector-length (pointer-vector-length rects-vector))
+           (weights-vector (list->u32vector weights))
+           (weights-vector-length (u32vector-length weights-vector))
+           (valign (case valign
+                     ((none) KW_RECT_ALIGN_VERTICALLY_NONE)
+                     ((top) KW_RECT_ALIGN_TOP)
+                     ((middle) KW_RECT_ALIGN_MIDDLE)
+                     ((bottom) KW_RECT_ALIGN_BOTTOM)
+                     (else
+                      (abort (usage-error "Invalid vertical alignment value"
+                                          'rect-fill-parent-horizontally!))))))
+      (KW_RectFillParentHorizontally outer* rects-vector rects-vector-length
+                                     weights-vector weights-vector-length
+                                     count padding valign))))
 
 (define (rect-x rect)
   (and-let* ((rect* (rect-pointer rect)))
