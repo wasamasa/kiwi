@@ -13,7 +13,7 @@
    handler-set!)
 
 (import chicken scheme foreign)
-(use clojurian-syntax srfi-69)
+(use clojurian-syntax srfi-69 lolevel)
 
 ;;; headers
 
@@ -58,6 +58,9 @@
 (define KW_CreateButton (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateButton" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_CreateEditbox (foreign-lambda (c-pointer (struct "KW_Widget")) "KW_CreateEditbox" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Widget")) c-string (c-pointer (struct "KW_Rect"))))
 (define KW_SetEditboxFont (foreign-lambda void "KW_SetEditboxFont" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Font"))))
+(define KW_GetWidgetGeometry (foreign-lambda void "KW_GetWidgetGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_GetWidgetAbsoluteGeometry (foreign-lambda void "KW_GetWidgetAbsoluteGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_SetWidgetGeometry (foreign-lambda void "KW_SetWidgetGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
 (define KW_AddWidgetMouseOverHandler (foreign-lambda void "KW_AddWidgetMouseOverHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget"))))))
 (define KW_AddWidgetMouseLeaveHandler (foreign-lambda void "KW_AddWidgetMouseLeaveHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget"))))))
 (define KW_AddWidgetMouseDownHandler (foreign-lambda void "KW_AddWidgetMouseDownHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int))))
@@ -67,12 +70,8 @@
 (define KW_AddWidgetDragHandler (foreign-lambda void "KW_AddWidgetDragHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int int int))))
 
 ;;; foreign rect helpers
-(define KW_CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h)) "KW_Rect *r = calloc(sizeof(KW_Rect), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
-(define KW_DestroyRect (foreign-lambda* void (((c-pointer (struct "KW_Rect")) r)) "free(r);"))
 
-(define KW_GetWidgetGeometry (foreign-lambda void "KW_GetWidgetGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
-(define KW_GetWidgetAbsoluteGeometry (foreign-lambda void "KW_GetWidgetAbsoluteGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
-(define KW_SetWidgetGeometry (foreign-lambda void "KW_SetWidgetGeometry" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Rect"))))
+(define KW_CreateRect (foreign-lambda* (c-pointer (struct "KW_Rect")) ((int x) (int y) (int w) (int h)) "KW_Rect *r = calloc(sizeof(KW_Rect), 1); r->x = x; r->y = y; r->w = w; r->h = h; C_return(r);"))
 
 (define KW_Rect->x (foreign-lambda* int (((c-pointer (struct "KW_Rect")) r)) "C_return(r->x);"))
 (define KW_Rect->y (foreign-lambda* int (((c-pointer (struct "KW_Rect")) r)) "C_return(r->y);"))
@@ -211,7 +210,7 @@
 
 (define (release-rect! rect)
   (and-let* ((rect* (rect-pointer rect)))
-    (KW_DestroyRect rect*)
+    (free rect*)
     (rect-pointer-set! rect #f)))
 
 (define (rect-x rect)
@@ -282,22 +281,22 @@
     (KW_SetLabelIcon label* clip*)))
 
 (define (label-alignment-set! label halign hoffset valign voffset)
-  (and-let* ((label* (widget-pointer label))
-             (halign (case halign
-                       ((left) KW_LABEL_ALIGN_LEFT)
-                       ((center) KW_LABEL_ALIGN_CENTER)
-                       ((right) KW_LABEL_ALIGN_RIGHT)
-                       (else
-                        (abort (usage-error "Invalid horizontal alignment value"
-                                            'label-alignment-set!)))))
-             (valign (case valign
-                       ((top) KW_LABEL_ALIGN_TOP)
-                       ((middle) KW_LABEL_ALIGN_MIDDLE)
-                       ((bottom) KW_LABEL_ALIGN_BOTTOM)
-                       (else
-                        (abort (usage-error "Invalid vertical alignment value"
-                                            'label-alignment-set!))))))
-    (KW_SetLabelAlignment label* halign hoffset valign voffset)))
+  (and-let* ((label* (widget-pointer label)))
+    (let ((halign (case halign
+                    ((left) KW_LABEL_ALIGN_LEFT)
+                    ((center) KW_LABEL_ALIGN_CENTER)
+                    ((right) KW_LABEL_ALIGN_RIGHT)
+                    (else
+                     (abort (usage-error "Invalid horizontal alignment value"
+                                         'label-alignment-set!)))))
+          (valign (case valign
+                    ((top) KW_LABEL_ALIGN_TOP)
+                    ((middle) KW_LABEL_ALIGN_MIDDLE)
+                    ((bottom) KW_LABEL_ALIGN_BOTTOM)
+                    (else
+                     (abort (usage-error "Invalid vertical alignment value"
+                                         'label-alignment-set!))))))
+      (KW_SetLabelAlignment label* halign hoffset valign voffset))))
 
 (define (button gui parent text geometry)
   (define-widget 'button gui parent geometry
