@@ -24,9 +24,8 @@
 (define-values (window renderer)
   (sdl2:create-window-and-renderer! width height))
 
-(define driver
-  (kw:create-sdl2-render-driver (unwrap-renderer renderer)
-                                (unwrap-window window)))
+(define driver (kw:create-sdl2-render-driver (unwrap-renderer renderer)
+                                             (unwrap-window window)))
 
 (define normal-bg (sdl2:make-color 100 100 200))
 (define normal-tileset (kw:load-surface driver "tileset.png"))
@@ -68,9 +67,7 @@
 
 (sdl2:render-draw-color-set! renderer futter-bg)
 
-(define gui
-  (kw:init! driver futter-tileset))
-
+(define gui (kw:init! driver futter-tileset))
 (kw:font-set! gui fontin)
 
 (define (switch-to font tileset bg)
@@ -78,11 +75,9 @@
   (sdl2:render-draw-color-set! renderer bg)
   (kw:tileset-surface-set! gui tileset))
 
-(define frame
-  (kw:frame gui #f (kw:rect 10 10 (- width 20) (- height 20))))
+(define frame (kw:frame gui #f (kw:rect 10 10 (- width 20) (- height 20))))
 
-(define buttons-frame
-  (kw:frame gui frame (kw:rect 10 (/ width 2) 280 48)))
+(define buttons-frame (kw:frame gui frame (kw:rect 10 (/ width 2) 280 48)))
 
 (for-each
  (lambda (style)
@@ -97,16 +92,12 @@
                         (switch-to font tileset bg)))))
  (map cdr styles))
 
-(define editbox-frame
-  (kw:frame gui frame (kw:rect 10 10 280 100)))
+(define editbox-frame (kw:frame gui frame (kw:rect 10 10 280 100)))
 
-(define editbox
-  (kw:editbox gui editbox-frame "βέβαιος (sure)" (kw:rect 120 20 150 35)))
-
+(define editbox (kw:editbox gui editbox-frame "βέβαιος (sure)" (kw:rect 120 20 150 35)))
 (kw:editbox-font-set! editbox dejavu)
 
-(define editbox-label
-  (kw:label gui editbox-frame "Can you do UTF-8?" (kw:rect 10 20 110 35)))
+(define editbox-label (kw:label gui editbox-frame "Can you do UTF-8?" (kw:rect 10 20 110 35)))
 
 (kw:label-alignment-set! editbox-label 'right 0 'middle 0)
 
@@ -117,7 +108,6 @@
 
 (define kthxbai-button
   (kw:button gui editbox-frame "kthxbai" (kw:rect 120 60 150 25)))
-
 (kw:handler-set! kthxbai-button 'mouse-down kthxbai-clicked)
 
 (let loop ()

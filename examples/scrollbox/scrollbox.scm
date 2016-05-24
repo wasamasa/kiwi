@@ -47,14 +47,14 @@
 
 (sdl2:render-draw-color-set! renderer (sdl2:make-color 100 200 100))
 
-(define driver
-  (kw:create-sdl2-render-driver (unwrap-renderer renderer)
-                                (unwrap-window window)))
+(define driver (kw:create-sdl2-render-driver (unwrap-renderer renderer)
+                                             (unwrap-window window)))
 
-(define gui
-  (kw:init! driver (kw:load-surface driver "tileset.png")))
+(define tileset (kw:load-surface driver "tileset.png"))
+(define gui (kw:init! driver tileset))
 
-(kw:font-set! gui (kw:load-font driver "SourceSansPro-Semibold.ttf" 12))
+(define font (kw:load-font driver "SourceSansPro-Semibold.ttf" 12))
+(kw:font-set! gui font)
 
 (define (->int x)
   (inexact->exact (ceiling x)))
@@ -65,13 +65,10 @@
   (set! (kw:rect-w rect) (->int (* (kw:rect-w rect) 0.875)))
   (set! (kw:rect-h rect) (->int (* (kw:rect-h rect) 0.875))))
 
-(define scrollbox-geometry
-  (kw:rect 0 0 width height))
-
+(define scrollbox-geometry (kw:rect 0 0 width height))
 (squash-rect! scrollbox-geometry)
 
-(define scrollbox
-  (kw:scrollbox gui #f scrollbox-geometry))
+(define scrollbox (kw:scrollbox gui #f scrollbox-geometry))
 
 (kw:handler-set! scrollbox 'drag-start drag-start)
 (kw:handler-set! scrollbox 'drag drag)

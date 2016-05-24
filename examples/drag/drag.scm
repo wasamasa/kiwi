@@ -51,30 +51,24 @@
 
 (sdl2:render-draw-color-set! renderer (sdl2:make-color 200 100 100))
 
-(define driver
-  (kw:create-sdl2-render-driver (unwrap-renderer renderer)
-                                (unwrap-window window)))
+(define driver (kw:create-sdl2-render-driver (unwrap-renderer renderer)
+                                             (unwrap-window window)))
 
-(define gui
-  (kw:init! driver (kw:load-surface driver "tileset.png")))
+(define tileset (kw:load-surface driver "tileset.png"))
+(define gui (kw:init! driver tileset))
 
-(kw:font-set! gui (kw:load-font driver "Fontin-Regular.ttf" 12))
+(define font (kw:load-font driver "Fontin-Regular.ttf" 12))
+(kw:font-set! gui font)
 
-(define frame
-  (kw:frame gui #f (kw:rect 50 50 100 100)))
-
+(define frame (kw:frame gui #f (kw:rect 50 50 100 100)))
 (kw:handler-set! frame 'drag drag)
 
-(define a
-  (kw:button gui frame "Yay" (kw:rect 0 0 (/ width 4) (/ height 4))))
-
+(define a (kw:button gui frame "Yay" (kw:rect 0 0 (/ width 4) (/ height 4))))
 (kw:handler-set! a 'drag-start drag-start)
 (kw:handler-set! a 'drag-stop drag-stop)
 (kw:handler-set! a 'drag drag)
 
-(define b
-  (kw:button gui frame "Yay" (kw:rect 10 10 (/ width 4) (/ height 4))))
-
+(define b (kw:button gui frame "Yay" (kw:rect 10 10 (/ width 4) (/ height 4))))
 (kw:handler-set! b 'drag-start drag-start)
 (kw:handler-set! b 'drag-stop drag-stop)
 (kw:handler-set! b 'drag drag)

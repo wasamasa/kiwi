@@ -26,21 +26,17 @@
 
 (sdl2:render-draw-color-set! renderer (sdl2:make-color 200 100 100))
 
-(define driver
-  (kw:create-sdl2-render-driver (unwrap-renderer renderer)
-                                (unwrap-window window)))
+(define driver (kw:create-sdl2-render-driver (unwrap-renderer renderer)
+                                             (unwrap-window window)))
 
-(define gui
-  (kw:init! driver (kw:load-surface driver "tileset.png")))
+(define tileset (kw:load-surface driver "tileset.png"))
+(define gui (kw:init! driver tileset))
 
-(kw:font-set! gui (kw:load-font driver "Fontin-Regular.ttf" 12))
+(define font (kw:load-font driver "Fontin-Regular.ttf" 12))
+(kw:font-set! gui font)
 
-(define frame-geometry
-  (kw:rect 10 10 (/ width 2) (/ height 2)))
-
-(define label-geometry
-  (kw:rect 0 0 (/ width 2) (/ height 2)))
-
+(define frame-geometry (kw:rect 10 10 (/ width 2) (/ height 2)))
+(define label-geometry (kw:rect 0 0 (/ width 2) (/ height 2)))
 (define frame #f)
 
 (let loop ((i 0))
