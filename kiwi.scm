@@ -44,7 +44,7 @@
 (define KW_LABEL_ALIGN_BOTTOM (foreign-value "KW_LABEL_ALIGN_BOTTOM" int))
 
 ;; enum KW_RectHorizontalAlignment
-(define KW_RECT_ALIGN_HORIZONTALLY_NONE (foreign-value "KW_RECT_ALIGN_HORIONTALLY_NONE" int)) ; ugh
+(define KW_RECT_ALIGN_HORIZONTALLY_NONE (foreign-value "KW_RECT_ALIGN_HORIZONTALLY_NONE" int))
 (define KW_RECT_ALIGN_LEFT (foreign-value "KW_RECT_ALIGN_LEFT" int))
 (define KW_RECT_ALIGN_CENTER (foreign-value "KW_RECT_ALIGN_CENTER" int))
 (define KW_RECT_ALIGN_RIGHT (foreign-value "KW_RECT_ALIGN_RIGHT" int))
