@@ -494,6 +494,8 @@
              (abort (usage-error (format "Unimplemented widget tag name: ~a" tag) 'widget))))))
     (and-let* ((tileset (alist-ref 'tileset attributes)))
       (widget-tileset-surface-set! widget tileset))
+    (and-let* ((hidden? (alist-ref 'hidden? attributes)))
+      (hide-widget! widget))
     (when (pair? handlers)
       (for-each
        (lambda (handler)
