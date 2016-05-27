@@ -60,18 +60,19 @@
 (define font (kw:load-font driver "Fontin-Regular.ttf" 12))
 (kw:font-set! gui font)
 
-(define frame (kw:frame gui #f (kw:rect 50 50 100 100)))
-(kw:handler-set! frame 'drag drag)
-
-(define a (kw:button gui frame "Yay" (kw:rect 0 0 (/ width 4) (/ height 4))))
-(kw:handler-set! a 'drag-start drag-start)
-(kw:handler-set! a 'drag-stop drag-stop)
-(kw:handler-set! a 'drag drag)
-
-(define b (kw:button gui frame "Yay" (kw:rect 10 10 (/ width 4) (/ height 4))))
-(kw:handler-set! b 'drag-start drag-start)
-(kw:handler-set! b 'drag-stop drag-stop)
-(kw:handler-set! b 'drag drag)
+(kw:widgets gui
+ `(frame (@ (x 50) (y 50) (w 100) (h 100)
+            (drag ,drag))
+    (button (@ (x 0) (y 0) (w ,(/ width 4)) (h ,(/ width 4))
+               (text "Yay")
+               (drag-start ,drag-start)
+               (drag-stop ,drag-stop)
+               (drag ,drag)))
+    (button (@ (x 10) (y 10) (w ,(/ width 4)) (h ,(/ width 4))
+               (text "Yay")
+               (drag-start ,drag-start)
+               (drag-stop ,drag-stop)
+               (drag ,drag)))))
 
 (let loop ()
   (when (not (sdl2:quit-requested?))

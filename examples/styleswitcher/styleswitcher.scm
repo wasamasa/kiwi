@@ -75,40 +75,41 @@
   (sdl2:render-draw-color-set! renderer bg)
   (kw:tileset-surface-set! gui tileset))
 
-(define frame (kw:frame gui #f (kw:rect 10 10 (- width 20) (- height 20))))
-
-(define buttons-frame (kw:frame gui frame (kw:rect 10 (/ width 2) 280 48)))
-
-(for-each
- (lambda (style)
-   (let* ((x (alist-ref 'x style))
-          (bg (alist-ref 'bg style))
-          (tileset (alist-ref 'tileset style))
-          (font (alist-ref 'font style))
-          (button (kw:button gui buttons-frame "" (kw:rect x 8 32 32))))
-     (kw:widget-tileset-surface-set! button tileset)
-     (kw:handler-set! button 'mouse-down
-                      (lambda (_widget _button)
-                        (switch-to font tileset bg)))))
- (map cdr styles))
-
-(define editbox-frame (kw:frame gui frame (kw:rect 10 10 280 100)))
-
-(define editbox (kw:editbox gui editbox-frame "βέβαιος (sure)" (kw:rect 120 20 150 35)))
-(kw:editbox-font-set! editbox dejavu)
-
-(define editbox-label (kw:label gui editbox-frame "Can you do UTF-8?" (kw:rect 10 20 110 35)))
-
-(kw:label-alignment-set! editbox-label 'right 0 'middle 0)
-
 (define quit? #f)
 
 (define (kthxbai-clicked widget _button)
   (set! quit? #t))
 
-(define kthxbai-button
-  (kw:button gui editbox-frame "kthxbai" (kw:rect 120 60 150 25)))
-(kw:handler-set! kthxbai-button 'mouse-down kthxbai-clicked)
+(kw:widgets gui
+ `(frame (@ (x 10) (y 10) (w ,(- width 20)) (h ,(- height 20)))
+    (frame (@ (x 10) (y ,(/ width 2)) (w 280) (h 48)
+              (id buttons)))
+    (frame (@ (x 10) (y 10) (w 280) (h 100))
+      (label (@ (x 10) (y 20) (w 110) (h 35)
+                (align (right 0 middle 0))
+                (text "Can you do UTF-8?")))
+      (editbox (@ (x 120) (y 20) (w 150) (h 35)
+                  (text "βέβαιος (sure)")
+                  (font ,dejavu)))
+      (button (@ (x 120) (y 60) (w 150) (h 25)
+                 (text "kthxbai")
+                 (mouse-down ,kthxbai-clicked))))))
+
+(let ((buttons (kw:widget-by-id 'buttons)))
+  (for-each
+   (lambda (style)
+     (let* ((x (alist-ref 'x style))
+            (bg (alist-ref 'bg style))
+            (tileset (alist-ref 'tileset style))
+            (font (alist-ref 'font style)))
+       (kw:widgets gui (kw:widget-by-id 'buttons)
+        `(button (@ (x ,x) (y 8) (w 32) (h 32)
+                    (tileset ,tileset)
+                    (text "")
+                    (mouse-down
+                     ,(lambda (_widget _button)
+                        (switch-to font tileset bg))))))))
+   (map cdr styles)))
 
 (let loop ()
   (when (and (not (sdl2:quit-requested?)) (not quit?))

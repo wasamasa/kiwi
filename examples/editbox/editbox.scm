@@ -35,29 +35,30 @@
 (define font (kw:load-font driver "DejaVuSans.ttf" 12))
 (kw:font-set! gui font)
 
-(define window-geometry (kw:rect 0 0 width height))
-(define frame-geometry (kw:rect 10 10 (- width 20) (- height 20)))
-(kw:rect-center-in-parent! window-geometry frame-geometry)
-
-(define frame (kw:frame gui #f frame-geometry))
-(define label-geometry (kw:rect 0 100 60 30))
-(define editbox-geometry (kw:rect 0 100 100 30))
-
-(kw:rect-fill-parent-horizontally! frame-geometry
-                                   (list label-geometry editbox-geometry)
-                                   '(1 4) 2 10 'middle)
-
-(kw:label gui frame "Editbox example" (kw:rect 0 10 300 30))
-(kw:label gui frame "Label" label-geometry)
-(kw:editbox gui frame "Edit me!" editbox-geometry)
-
 (define quit? #f)
 
 (define (ok-clicked _widget _button)
   (set! quit? #t))
 
-(define ok-button (kw:button gui frame "OK" (kw:rect 250 170 40 40)))
-(kw:handler-set! ok-button 'mouse-down ok-clicked)
+(kw:widgets gui
+ `(frame (@ (x 10) (y 10) (w ,(- width 20)) (h ,(- height 20))
+            (id frame))
+   (label (@ (x 0) (y 10) (w 300) (h 30)
+             (text "Editbox example")))
+   (label (@ (x 0) (y 100) (w 60) (h 30)
+             (text "Label")
+             (id label)))
+   (editbox (@ (x 0) (y 100) (w 100) (h 30)
+               (text "Edit me!")
+               (id editbox)))
+   (button (@ (x 250) (y 170) (w 40) (h 40)
+              (text "OK")
+              (mouse-down ,ok-clicked)))))
+
+(kw:widget-fill-parent-horizontally! (kw:widget-by-id 'frame)
+                                     (list (kw:widget-by-id 'label)
+                                           (kw:widget-by-id 'editbox))
+                                     '(1 4) 10 'middle)
 
 (let loop ()
   (when (and (not (sdl2:quit-requested?)) (not quit?))

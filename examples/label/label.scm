@@ -35,12 +35,13 @@
 (define font (kw:load-font driver "Fontin-Regular.ttf" 12))
 (kw:font-set! gui font)
 
-(define geometry (kw:rect 0 0 width height))
-
-(define frame (kw:frame gui #f geometry))
-
-(define label (kw:label gui frame "Label with an icon :)" geometry))
-(kw:label-icon-set! label (kw:rect 0 48 24 24))
+(kw:widgets gui
+ `(frame
+   (@ (x 0) (y 0) (w ,width) (h ,height))
+   (label
+    (@ (x 0) (y 0) (w ,width) (h ,height)
+       (icon ((x 0) (y 48) (w 24) (h 24)))
+       (text "Label with an icon :)")))))
 
 (let loop ()
   (when (not (sdl2:quit-requested?))
