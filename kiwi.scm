@@ -7,10 +7,11 @@
    font-set!
    rect rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-fill-parent-horizontally!
+   color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
    widget-tileset-surface-set!
    frame
    scrollbox
-   label label-icon-set! label-alignment-set!
+   label label-icon-set! label-alignment-set! label-color-set!
    button
    editbox editbox-font-set!
    widget-geometry widget-geometry-set!
@@ -67,6 +68,7 @@
 (define KW_CreateLabel (foreign-lambda* (c-pointer (struct "KW_Widget")) (((c-pointer (struct "KW_GUI")) gui) ((c-pointer (struct "KW_Widget")) parent) (c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateLabel(gui, parent, text, &r));"))
 (define KW_SetLabelIcon (foreign-lambda* void (((c-pointer (struct "KW_Widget")) label) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetLabelIcon(label, &r);"))
 (define KW_SetLabelAlignment (foreign-lambda void "KW_SetLabelAlignment" (c-pointer (struct "KW_Widget")) (enum "KW_LabelHorizontalAlignment") int (enum "KW_LabelVerticalAlignment") int))
+(define KW_SetLabelColor (foreign-lambda* void (((c-pointer (struct "KW_Widget")) label) (unsigned-byte r) (unsigned-byte g) (unsigned-byte b) (unsigned-byte a)) "KW_Color c = { r, g, b, a }; KW_SetLabelColor(label, c);"))
 
 (define KW_CreateButton (foreign-lambda* (c-pointer (struct "KW_Widget")) (((c-pointer (struct "KW_GUI")) gui) ((c-pointer (struct "KW_Widget")) parent) (c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateButton(gui, parent, text, &r));"))
 
@@ -93,6 +95,7 @@
 (define-record gui pointer)
 (define-record rect x y w h)
 (define-record widget handlers pointer)
+(define-record color r g b a)
 
 ;;; generic handlers
 
@@ -245,6 +248,15 @@
           (loop (+ (rect-x inner) (rect-w inner))
                 (cdr rects) (cdr weights)))))))
 
+;;; colors
+
+(define color make-color)
+
+(define color-r (getter-with-setter color-r color-r-set!))
+(define color-g (getter-with-setter color-g color-g-set!))
+(define color-b (getter-with-setter color-b color-b-set!))
+(define color-a (getter-with-setter color-a color-a-set!))
+
 ;;; widgets
 
 (define widget-table (make-hash-table))
@@ -303,6 +315,14 @@
                      (abort (usage-error "Invalid vertical alignment value"
                                          'label-alignment-set!))))))
       (KW_SetLabelAlignment label* halign hoffset valign voffset))))
+
+(define (label-color-set! label color)
+  (and-let* ((label* (widget-pointer label))
+             (r (color-r color))
+             (g (color-g color))
+             (b (color-b color))
+             (a (color-a color)))
+    (KW_SetLabelColor label* r g b a)))
 
 (define (button gui parent text geometry)
   (define-widget 'button gui parent geometry
