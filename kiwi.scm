@@ -49,50 +49,62 @@
 (define KW_LABEL_ALIGN_MIDDLE (foreign-value "KW_LABEL_ALIGN_MIDDLE" int))
 (define KW_LABEL_ALIGN_BOTTOM (foreign-value "KW_LABEL_ALIGN_BOTTOM" int))
 
+;;; typedefs
+
+(define-foreign-type SDL_Renderer* (nonnull-c-pointer (struct "SDL_Renderer")))
+(define-foreign-type SDL_Window* (nonnull-c-pointer (struct "SDL_Window")))
+(define-foreign-type KW_RenderDriver* (nonnull-c-pointer (struct "KW_RenderDriver")))
+(define-foreign-type KW_Surface* (nonnull-c-pointer (struct "KW_Surface")))
+(define-foreign-type KW_Font* (nonnull-c-pointer (struct "KW_Font")))
+(define-foreign-type KW_GUI* (nonnull-c-pointer (struct "KW_GUI")))
+(define-foreign-type KW_Widget* (nonnull-c-pointer (struct "KW_Widget")))
+(define-foreign-type KW_Widget*-or-null (c-pointer (struct "KW_Widget")))
+(define-foreign-type int* (nonnull-c-pointer int))
+
 ;;; foreign functions
 
-(define KW_CreateSDL2RenderDriver (foreign-lambda (c-pointer (struct "KW_RenderDriver")) "KW_CreateSDL2RenderDriver" (c-pointer (struct "SDL_Renderer")) (c-pointer (struct "SDL_Window"))))
-(define KW_ReleaseRenderDriver (foreign-lambda void "KW_ReleaseRenderDriver" (c-pointer (struct "KW_RenderDriver"))))
-(define KW_LoadSurface (foreign-lambda (c-pointer (struct "KW_Surface")) "KW_LoadSurface" (c-pointer (struct "KW_RenderDriver")) c-string))
-(define KW_ReleaseSurface (foreign-lambda void "KW_ReleaseSurface" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Surface"))))
-(define KW_LoadFont (foreign-lambda (c-pointer (struct "KW_Font")) "KW_LoadFont" (c-pointer (struct "KW_RenderDriver")) c-string unsigned-int))
-(define KW_ReleaseFont (foreign-lambda void "KW_ReleaseFont" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Font"))))
-(define KW_Init (foreign-lambda (c-pointer (struct "KW_GUI")) "KW_Init" (c-pointer (struct "KW_RenderDriver")) (c-pointer (struct "KW_Surface"))))
-(define KW_ProcessEvents (foreign-safe-lambda void "KW_ProcessEvents" (c-pointer (struct "KW_GUI"))))
-(define KW_Paint (foreign-lambda void "KW_Paint" (c-pointer (struct "KW_GUI"))))
-(define KW_Quit (foreign-lambda void "KW_Quit" (c-pointer (struct "KW_GUI"))))
-(define KW_SetFont (foreign-lambda void "KW_SetFont" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Font"))))
-(define KW_SetTilesetSurface (foreign-lambda void "KW_SetTilesetSurface" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Surface"))))
-(define KW_SetWidgetTilesetSurface (foreign-lambda void "KW_SetWidgetTilesetSurface" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Surface"))))
-(define KW_HideWidget (foreign-lambda void "KW_HideWidget" (c-pointer (struct "KW_Widget"))))
-(define KW_ShowWidget (foreign-lambda void "KW_ShowWidget" (c-pointer (struct "KW_Widget"))))
-(define KW_IsWidgetHidden (foreign-lambda bool "KW_IsWidgetHidden" (c-pointer (struct "KW_Widget"))))
+(define KW_CreateSDL2RenderDriver (foreign-lambda KW_RenderDriver* "KW_CreateSDL2RenderDriver" SDL_Renderer* SDL_Window*))
+(define KW_ReleaseRenderDriver (foreign-lambda void "KW_ReleaseRenderDriver" KW_RenderDriver*))
+(define KW_LoadSurface (foreign-lambda KW_Surface* "KW_LoadSurface" KW_RenderDriver* nonnull-c-string))
+(define KW_ReleaseSurface (foreign-lambda void "KW_ReleaseSurface" KW_RenderDriver* KW_Surface*))
+(define KW_LoadFont (foreign-lambda KW_Font* "KW_LoadFont" KW_RenderDriver* nonnull-c-string unsigned-int))
+(define KW_ReleaseFont (foreign-lambda void "KW_ReleaseFont" KW_RenderDriver* KW_Font*))
+(define KW_Init (foreign-lambda KW_GUI* "KW_Init" KW_RenderDriver* KW_Surface*))
+(define KW_ProcessEvents (foreign-safe-lambda void "KW_ProcessEvents" KW_GUI*))
+(define KW_Paint (foreign-lambda void "KW_Paint" KW_GUI*))
+(define KW_Quit (foreign-lambda void "KW_Quit" KW_GUI*))
+(define KW_SetFont (foreign-lambda void "KW_SetFont" KW_GUI* KW_Font*))
+(define KW_SetTilesetSurface (foreign-lambda void "KW_SetTilesetSurface" KW_GUI* KW_Surface*))
+(define KW_SetWidgetTilesetSurface (foreign-lambda void "KW_SetWidgetTilesetSurface" KW_Widget* KW_Surface*))
+(define KW_HideWidget (foreign-lambda void "KW_HideWidget" KW_Widget*))
+(define KW_ShowWidget (foreign-lambda void "KW_ShowWidget" KW_Widget*))
+(define KW_IsWidgetHidden (foreign-lambda bool "KW_IsWidgetHidden" KW_Widget*))
 
-(define KW_CreateFrame (foreign-lambda* (c-pointer (struct "KW_Widget")) (((c-pointer (struct "KW_GUI")) gui) ((c-pointer (struct "KW_Widget")) parent) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateFrame(gui, parent, &r));"))
+(define KW_CreateFrame (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateFrame(gui, parent, &r));"))
 
-(define KW_CreateScrollbox (foreign-lambda* (c-pointer (struct "KW_Widget")) (((c-pointer (struct "KW_GUI")) gui) ((c-pointer (struct "KW_Widget")) parent) (int x) (int y) (int w) (int h))" KW_Rect r = { x, y, w, h }; C_return(KW_CreateScrollbox(gui, parent, &r));"))
+(define KW_CreateScrollbox (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (int x) (int y) (int w) (int h))" KW_Rect r = { x, y, w, h }; C_return(KW_CreateScrollbox(gui, parent, &r));"))
 
-(define KW_CreateLabel (foreign-lambda* (c-pointer (struct "KW_Widget")) (((c-pointer (struct "KW_GUI")) gui) ((c-pointer (struct "KW_Widget")) parent) (c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateLabel(gui, parent, text, &r));"))
-(define KW_SetLabelIcon (foreign-lambda* void (((c-pointer (struct "KW_Widget")) label) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetLabelIcon(label, &r);"))
-(define KW_SetLabelAlignment (foreign-lambda void "KW_SetLabelAlignment" (c-pointer (struct "KW_Widget")) (enum "KW_LabelHorizontalAlignment") int (enum "KW_LabelVerticalAlignment") int))
-(define KW_SetLabelColor (foreign-lambda* void (((c-pointer (struct "KW_Widget")) label) (unsigned-byte r) (unsigned-byte g) (unsigned-byte b) (unsigned-byte a)) "KW_Color c = { r, g, b, a }; KW_SetLabelColor(label, c);"))
+(define KW_CreateLabel (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateLabel(gui, parent, text, &r));"))
+(define KW_SetLabelIcon (foreign-lambda* void ((KW_Widget* label) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetLabelIcon(label, &r);"))
+(define KW_SetLabelAlignment (foreign-lambda void "KW_SetLabelAlignment" KW_Widget* (enum "KW_LabelHorizontalAlignment") int (enum "KW_LabelVerticalAlignment") int))
+(define KW_SetLabelColor (foreign-lambda* void ((KW_Widget* label) (unsigned-byte r) (unsigned-byte g) (unsigned-byte b) (unsigned-byte a)) "KW_Color c = { r, g, b, a }; KW_SetLabelColor(label, c);"))
 
-(define KW_CreateButton (foreign-lambda* (c-pointer (struct "KW_Widget")) (((c-pointer (struct "KW_GUI")) gui) ((c-pointer (struct "KW_Widget")) parent) (c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateButton(gui, parent, text, &r));"))
+(define KW_CreateButton (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateButton(gui, parent, text, &r));"))
 
-(define KW_CreateEditbox (foreign-lambda* (c-pointer (struct "KW_Widget")) (((c-pointer (struct "KW_GUI")) gui) ((c-pointer (struct "KW_Widget")) parent) (c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateEditbox(gui, parent, text, &r));"))
-(define KW_SetEditboxFont (foreign-lambda void "KW_SetEditboxFont" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Font"))))
+(define KW_CreateEditbox (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateEditbox(gui, parent, text, &r));"))
+(define KW_SetEditboxFont (foreign-lambda void "KW_SetEditboxFont" KW_Widget* KW_Font*))
 
-(define KW_GetWidgetGeometry (foreign-lambda* void (((c-pointer (struct "KW_Widget")) widget) ((c-pointer int) x) ((c-pointer int) y) ((c-pointer int) w) ((c-pointer int) h)) "KW_Rect r; KW_GetWidgetGeometry(widget, &r); *x = r.x, *y = r.y, *w = r.w, *h = r.h;"))
-(define KW_GetWidgetAbsoluteGeometry (foreign-lambda* void (((c-pointer (struct "KW_Widget")) widget) ((c-pointer int) x) ((c-pointer int) y) ((c-pointer int) w) ((c-pointer int) h)) "KW_Rect r; KW_GetWidgetAbsoluteGeometry(widget, &r); *x = r.x, *y = r.y, *w = r.w, *h = r.h;"))
-(define KW_SetWidgetGeometry (foreign-lambda* void (((c-pointer (struct "KW_Widget")) widget) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetWidgetGeometry(widget, &r);"))
+(define KW_GetWidgetGeometry (foreign-lambda* void ((KW_Widget* widget) (int* x) (int* y) (int* w) (int* h)) "KW_Rect r; KW_GetWidgetGeometry(widget, &r); *x = r.x, *y = r.y, *w = r.w, *h = r.h;"))
+(define KW_GetWidgetAbsoluteGeometry (foreign-lambda* void ((KW_Widget* widget) (int* x) (int* y) (int* w) (int* h)) "KW_Rect r; KW_GetWidgetAbsoluteGeometry(widget, &r); *x = r.x, *y = r.y, *w = r.w, *h = r.h;"))
+(define KW_SetWidgetGeometry (foreign-lambda* void ((KW_Widget* widget) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetWidgetGeometry(widget, &r);"))
 
-(define KW_AddWidgetMouseOverHandler (foreign-lambda void "KW_AddWidgetMouseOverHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget"))))))
-(define KW_AddWidgetMouseLeaveHandler (foreign-lambda void "KW_AddWidgetMouseLeaveHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget"))))))
-(define KW_AddWidgetMouseDownHandler (foreign-lambda void "KW_AddWidgetMouseDownHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int))))
-(define KW_AddWidgetMouseUpHandler (foreign-lambda void "KW_AddWidgetMouseUpHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int))))
-(define KW_AddWidgetDragStartHandler (foreign-lambda void "KW_AddWidgetDragStartHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int))))
-(define KW_AddWidgetDragStopHandler (foreign-lambda void "KW_AddWidgetDragStopHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int))))
-(define KW_AddWidgetDragHandler (foreign-lambda void "KW_AddWidgetDragHandler" (c-pointer (struct "KW_Widget")) (function void ((c-pointer (struct "KW_Widget")) int int int int))))
+(define KW_AddWidgetMouseOverHandler (foreign-lambda void "KW_AddWidgetMouseOverHandler" KW_Widget* (function void (KW_Widget*))))
+(define KW_AddWidgetMouseLeaveHandler (foreign-lambda void "KW_AddWidgetMouseLeaveHandler" KW_Widget* (function void (KW_Widget*))))
+(define KW_AddWidgetMouseDownHandler (foreign-lambda void "KW_AddWidgetMouseDownHandler" KW_Widget* (function void (KW_Widget* int))))
+(define KW_AddWidgetMouseUpHandler (foreign-lambda void "KW_AddWidgetMouseUpHandler" KW_Widget* (function void (KW_Widget* int))))
+(define KW_AddWidgetDragStartHandler (foreign-lambda void "KW_AddWidgetDragStartHandler" KW_Widget* (function void (KW_Widget* int int))))
+(define KW_AddWidgetDragStopHandler (foreign-lambda void "KW_AddWidgetDragStopHandler" KW_Widget* (function void (KW_Widget* int int))))
+(define KW_AddWidgetDragHandler (foreign-lambda void "KW_AddWidgetDragHandler" KW_Widget* (function void (KW_Widget* int int int int))))
 
 ;;; auxiliary records
 
@@ -113,25 +125,25 @@
          (handler (hash-table-ref handlers type)))
     (apply handler widget args)))
 
-(define-external (kiwi_MouseOverHandler ((c-pointer (struct "KW_Widget")) widget*)) void
+(define-external (kiwi_MouseOverHandler (KW_Widget* widget*)) void
   (dispatch-event! widget* 'mouse-over))
 
-(define-external (kiwi_MouseLeaveHandler ((c-pointer (struct "KW_Widget")) widget*)) void
+(define-external (kiwi_MouseLeaveHandler (KW_Widget* widget*)) void
   (dispatch-event! widget* 'mouse-leave))
 
-(define-external (kiwi_MouseDownHandler ((c-pointer (struct "KW_Widget")) widget*) (int button)) void
+(define-external (kiwi_MouseDownHandler (KW_Widget* widget*) (int button)) void
   (dispatch-event! widget* 'mouse-down button))
 
-(define-external (kiwi_MouseUpHandler ((c-pointer (struct "KW_Widget")) widget*) (int button)) void
+(define-external (kiwi_MouseUpHandler (KW_Widget* widget*) (int button)) void
   (dispatch-event! widget* 'mouse-up button))
 
-(define-external (kiwi_DragStartHandler ((c-pointer (struct "KW_Widget")) widget*) (int x) (int y)) void
+(define-external (kiwi_DragStartHandler (KW_Widget* widget*) (int x) (int y)) void
   (dispatch-event! widget* 'drag-start x y))
 
-(define-external (kiwi_DragStopHandler ((c-pointer (struct "KW_Widget")) widget*) (int x) (int y)) void
+(define-external (kiwi_DragStopHandler (KW_Widget* widget*) (int x) (int y)) void
   (dispatch-event! widget* 'drag-stop x y))
 
-(define-external (kiwi_DragHandler ((c-pointer (struct "KW_Widget")) widget*) (int x) (int y) (int relx) (int rely)) void
+(define-external (kiwi_DragHandler (KW_Widget* widget*) (int x) (int y) (int relx) (int rely)) void
   (dispatch-event! widget* 'drag x y relx rely))
 
 ;;; errors
