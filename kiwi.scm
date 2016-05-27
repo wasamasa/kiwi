@@ -9,6 +9,7 @@
    rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
    widget-tileset-surface-set!
+   hide-widget! show-widget! widget-hidden?
    frame
    scrollbox
    label label-icon-set! label-alignment-set! label-color-set!
@@ -60,6 +61,9 @@
 (define KW_SetFont (foreign-lambda void "KW_SetFont" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Font"))))
 (define KW_SetTilesetSurface (foreign-lambda void "KW_SetTilesetSurface" (c-pointer (struct "KW_GUI")) (c-pointer (struct "KW_Surface"))))
 (define KW_SetWidgetTilesetSurface (foreign-lambda void "KW_SetWidgetTilesetSurface" (c-pointer (struct "KW_Widget")) (c-pointer (struct "KW_Surface"))))
+(define KW_HideWidget (foreign-lambda void "KW_HideWidget" (c-pointer (struct "KW_Widget"))))
+(define KW_ShowWidget (foreign-lambda void "KW_ShowWidget" (c-pointer (struct "KW_Widget"))))
+(define KW_IsWidgetHidden (foreign-lambda bool "KW_IsWidgetHidden" (c-pointer (struct "KW_Widget"))))
 
 (define KW_CreateFrame (foreign-lambda* (c-pointer (struct "KW_Widget")) (((c-pointer (struct "KW_GUI")) gui) ((c-pointer (struct "KW_Widget")) parent) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateFrame(gui, parent, &r));"))
 
@@ -279,6 +283,18 @@
   (and-let* ((widget* (widget-pointer widget))
              (tileset* (surface-pointer tileset)))
     (KW_SetWidgetTilesetSurface widget* tileset*)))
+
+(define (hide-widget! widget)
+  (and-let* ((widget* (widget-pointer widget)))
+    (KW_HideWidget widget*)))
+
+(define (show-widget! widget)
+  (and-let* ((widget* (widget-pointer widget)))
+    (KW_ShowWidget widget*)))
+
+(define (widget-hidden? widget)
+  (and-let* ((widget* (widget-pointer widget)))
+    (KW_IsWidgetHidden widget*)))
 
 (define (frame gui parent geometry)
   (define-widget 'frame gui parent geometry KW_CreateFrame))
