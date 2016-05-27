@@ -392,20 +392,19 @@
 
 (define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
 
-(define (widget-center-in-parent-horizontally! parent inner)
-  (let ((geometry (rect-center-in-parent-horizontally! (widget-geometry parent)
-                                                       (widget-geometry inner))))
+(define (widget-center-with-rect-proc parent inner proc)
+  (let ((geometry (widget-geometry inner)))
+    (proc (widget-geometry parent) geometry)
     (widget-geometry-set! inner geometry)))
+
+(define (widget-center-in-parent-horizontally! parent inner)
+  (widget-center-with-rect-proc parent inner rect-center-in-parent-horizontally!))
 
 (define (widget-center-in-parent-vertically! parent inner)
-  (let ((geometry (rect-center-in-parent-vertically! (widget-geometry parent)
-                                                     (widget-geometry inner))))
-    (widget-geometry-set! inner geometry)))
+  (widget-center-with-rect-proc parent inner rect-center-in-parent-vertically!))
 
 (define (widget-center-in-parent! parent inner)
-  (let ((geometry (rect-center-in-parent! (widget-geometry parent)
-                                          (widget-geometry inner))))
-    (widget-geometry-set! inner geometry)))
+  (widget-center-with-rect-proc parent inner rect-center-in-parent!))
 
 (define (widget-fill-parent-horizontally! parent children weights padding valign)
   (let ((count (length weights))
