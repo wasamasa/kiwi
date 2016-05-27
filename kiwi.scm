@@ -8,6 +8,7 @@
    rect rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
+   widget-by-id widgets-by-type
    widget-tileset-surface-set!
    hide-widget! show-widget! widget-hidden?
    frame
@@ -16,10 +17,11 @@
    button
    editbox editbox-font-set!
    widget-geometry widget-geometry-set!
-   handler-set!)
+   handler-set!
+   widgets)
 
 (import chicken scheme foreign)
-(use clojurian-syntax srfi-69 lolevel srfi-4)
+(use clojurian-syntax srfi-69 lolevel srfi-4 srfi-1 matchable data-structures)
 
 ;;; headers
 
@@ -97,8 +99,9 @@
 (define-record surface pointer)
 (define-record font pointer)
 (define-record gui pointer)
+(define-record widget handlers type id pointer)
+
 (define-record rect x y w h)
-(define-record widget handlers pointer)
 (define-record color r g b a)
 
 ;;; generic handlers
@@ -265,6 +268,16 @@
 
 (define widget-table (make-hash-table))
 
+(define (widgets-by-type type)
+  (filter
+   (lambda (widget) (eqv? (widget-type widget) type))
+   (hash-table-values widget-table)))
+
+(define (widget-by-id id)
+  (find
+   (lambda (widget) (eqv? (widget-id widget) id))
+   (hash-table-values widget-table)))
+
 (define (define-widget type gui parent geometry proc)
   (and-let* ((gui* (gui-pointer gui)))
     (let ((parent* (and parent (widget-pointer parent)))
@@ -274,7 +287,7 @@
           (h (rect-h geometry)))
       (if-let (widget* (proc gui* parent* x y w h))
         (let* ((handlers (make-hash-table eqv? eqv?-hash))
-               (widget (make-widget handlers widget*)))
+               (widget (make-widget handlers type #f widget*)))
           (hash-table-set! widget-table widget* widget)
           widget)
         (abort (oom-error type))))))
@@ -378,6 +391,8 @@
 
 (define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
 
+;;; handler interface
+
 (define (handler-set! widget type proc)
   (and-let* ((widget* (widget-pointer widget)))
     (let ((handlers (widget-handlers widget)))
@@ -405,5 +420,76 @@
          (KW_AddWidgetDragHandler widget* (location kiwi_DragHandler)))
         (else
          (abort (usage-error "Unsupported event handler type" 'handler-set!)))))))
+
+;;; SXML interface
+
+(define (attributes->alist attributes)
+  (map (lambda (item) (cons (car item) (cadr item)))
+       attributes))
+
+(define (widget gui tag parent attributes)
+  (let* ((text (alist-ref 'text attributes))
+
+         (id (alist-ref 'id attributes))
+         (x (alist-ref 'x attributes))
+         (y (alist-ref 'y attributes))
+         (w (alist-ref 'w attributes))
+         (h (alist-ref 'h attributes))
+         (geometry (rect x y w h))
+
+         (known-handlers '(mouse-over mouse-leave mouse-down mouse-up
+                           drag-start drag-stop drag))
+         (handlers (lset-intersection eqv? (map car attributes) known-handlers))
+
+         (widget
+          (case tag
+            ((frame)
+             (frame gui parent geometry))
+            ((label)
+             (let ((widget (label gui parent text geometry)))
+               (and-let* ((spec (alist-ref 'icon attributes))
+                          (spec (attributes->alist spec))
+                          (x (alist-ref 'x spec))
+                          (y (alist-ref 'y spec))
+                          (w (alist-ref 'w spec))
+                          (h (alist-ref 'h spec))
+                          (geometry (rect x y w h)))
+                 (label-icon-set! widget geometry))
+               (and-let* ((spec (alist-ref 'align attributes)))
+                 (apply label-alignment-set! widget spec))
+               (and-let* ((color (alist-ref 'color attributes)))
+                 (label-color-set! widget color))
+               widget))
+            ((editbox)
+             (let ((widget (editbox gui parent text geometry)))
+               (and-let* ((font (alist-ref 'font attributes)))
+                 (editbox-font-set! widget font))
+               widget))
+            ((button)
+             (button gui parent text geometry))
+            (else
+             (abort (usage-error (format "Unimplemented widget tag name: ~a" tag) 'widget))))))
+    (and-let* ((tileset (alist-ref 'tileset attributes)))
+      (widget-tileset-surface-set! widget tileset))
+    (when (pair? handlers)
+      (for-each
+       (lambda (handler)
+         (let ((proc (alist-ref handler attributes)))
+           (handler-set! widget handler proc)))
+       handlers))
+    (when id
+      (widget-id-set! widget id))
+    widget))
+
+;; (widgets gui [parent] sxml)
+(define (widgets gui sxml-or-parent #!optional arg)
+  (define (inner gui sxml parent)
+    (match sxml
+      ((tag ('@ attributes ...) children ...)
+       (let ((parent (widget gui tag parent (attributes->alist attributes))))
+         (for-each (lambda (child) (inner gui child parent))
+                   children)))
+      (_ (abort (usage-error "Invalid SXML syntax" 'widgets)))))
+  (inner gui (or arg sxml-or-parent) (if arg sxml-or-parent #f)))
 
 )
