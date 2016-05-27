@@ -17,6 +17,7 @@
    button
    editbox editbox-font-set!
    widget-geometry widget-geometry-set!
+   widget-center-in-parent! widget-center-in-parent-horizontally! widget-center-in-parent-vertically! widget-fill-parent-horizontally!
    handler-set!
    widgets)
 
@@ -390,6 +391,29 @@
       (KW_SetWidgetGeometry widget* x y w h))))
 
 (define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
+
+(define (widget-center-in-parent-horizontally! parent inner)
+  (let ((geometry (rect-center-in-parent-horizontally! (widget-geometry parent)
+                                                       (widget-geometry inner))))
+    (widget-geometry-set! inner geometry)))
+
+(define (widget-center-in-parent-vertically! parent inner)
+  (let ((geometry (rect-center-in-parent-vertically! (widget-geometry parent)
+                                                     (widget-geometry inner))))
+    (widget-geometry-set! inner geometry)))
+
+(define (widget-center-in-parent! parent inner)
+  (let ((geometry (rect-center-in-parent! (widget-geometry parent)
+                                          (widget-geometry inner))))
+    (widget-geometry-set! inner geometry)))
+
+(define (widget-fill-parent-horizontally! parent children weights padding valign)
+  (let ((count (length weights))
+        (parent (widget-geometry parent))
+        (rects (map widget-geometry children)))
+    (rect-fill-parent-horizontally! parent rects weights count padding valign)
+    (for-each (lambda (item) (widget-geometry-set! (car item) (cadr item)))
+              (zip children rects))))
 
 ;;; handler interface
 
