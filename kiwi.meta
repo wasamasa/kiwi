@@ -1,6 +1,6 @@
 ((synopsis "Bindings to the KiWi library")
  (author "Vasilij Schneidermann")
- (license "BSD")
+ (license "zlib")
  (category "graphics")
  (depends clojurian matchable)
  (foreign-depends "KW" "SDL2"))
