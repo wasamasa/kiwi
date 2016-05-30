@@ -5,6 +5,7 @@
    init! process-events! paint! quit!
    tileset-surface-set!
    font-set!
+   font-color font-color-set!
    rect rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
@@ -13,9 +14,9 @@
    hide-widget! show-widget! widget-hidden?
    frame
    scrollbox
-   label label-icon-set! label-alignment-set! label-color-set!
-   button
-   editbox editbox-font-set!
+   label label-icon-set! label-alignment-set! label-text-color label-text-color-set! label-text-color-set?
+   button button-text-color button-text-color-set! button-text-color-set?
+   editbox editbox-font-set! editbox-text-color editbox-text-color-set! editbox-text-color-set?
    widget-geometry widget-geometry-set!
    widget-center-in-parent! widget-center-in-parent-horizontally! widget-center-in-parent-vertically! widget-fill-parent-horizontally!
    handler-set!
@@ -226,6 +227,26 @@
              (font* (font-pointer font)))
     (KW_SetFont gui* font*)))
 
+(define (font-color gui)
+  (and-let* ((gui* (gui-pointer gui)))
+    (let-location ((r int)
+                   (g int)
+                   (b int)
+                   (a int))
+      (KW_GetFontColor gui* (location r) (location g) (location b) (location a))
+      (color r g b a))))
+
+;; NOTE: upstream will probably adjust the names to match widgets
+(define (font-color-set! gui color)
+  (and-let* ((gui* (gui-pointer gui))
+             (r (color-r color))
+             (g (color-g color))
+             (b (color-b color))
+             (a (color-a color)))
+    (KW_SetFontColor gui* r g b a)))
+
+(define font-color (getter-with-setter font-color font-color-set!))
+
 (define (tileset-surface-set! gui tileset)
   (and-let* ((gui* (gui-pointer gui))
              (tileset* (surface-pointer tileset)))
@@ -322,6 +343,69 @@
   (and-let* ((widget* (widget-pointer widget)))
     (KW_IsWidgetHidden widget*)))
 
+(define (widget-text-color widget proc)
+  (and-let* ((label* (widget-pointer label)))
+    (let-location ((r int)
+                   (g int)
+                   (b int)
+                   (a int))
+      (proc label* (location r) (location g) (location b) (location a))
+      (color r g b a))))
+
+(define (widget-text-color-set! widget proc color)
+  (and-let* ((label* (widget-pointer label))
+             (r (color-r color))
+             (g (color-g color))
+             (b (color-b color))
+             (a (color-a color)))
+    (proc label* r g b a)))
+
+(define (widget-text-color-set? widget proc)
+  (and-let* ((label* (widget-pointer label)))
+    (proc label*)))
+
+(define (widget-geometry widget #!optional absolute?)
+  (and-let* ((widget* (widget-pointer widget)))
+    (let ((proc (if absolute? KW_GetWidgetAbsoluteGeometry KW_GetWidgetGeometry)))
+      (let-location ((x int)
+                     (y int)
+                     (w int)
+                     (h int))
+        (proc widget* (location x) (location y) (location w) (location h))
+        (rect x y w h)))))
+
+(define (widget-geometry-set! widget geometry)
+  (and-let* ((widget* (widget-pointer widget)))
+    (let ((x (rect-x geometry))
+          (y (rect-y geometry))
+          (w (rect-w geometry))
+          (h (rect-h geometry)))
+      (KW_SetWidgetGeometry widget* x y w h))))
+
+(define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
+
+(define (widget-center-with-rect-proc parent inner proc)
+  (let ((geometry (widget-geometry inner)))
+    (proc (widget-geometry parent) geometry)
+    (widget-geometry-set! inner geometry)))
+
+(define (widget-center-in-parent-horizontally! parent inner)
+  (widget-center-with-rect-proc parent inner rect-center-in-parent-horizontally!))
+
+(define (widget-center-in-parent-vertically! parent inner)
+  (widget-center-with-rect-proc parent inner rect-center-in-parent-vertically!))
+
+(define (widget-center-in-parent! parent inner)
+  (widget-center-with-rect-proc parent inner rect-center-in-parent!))
+
+(define (widget-fill-parent-horizontally! parent children weights padding valign)
+  (let ((count (length weights))
+        (parent (widget-geometry parent))
+        (rects (map widget-geometry children)))
+    (rect-fill-parent-horizontally! parent rects weights count padding valign)
+    (for-each (lambda (item) (widget-geometry-set! (car item) (cadr item)))
+              (zip children rects))))
+
 (define (frame gui parent geometry)
   (define-widget 'frame gui parent geometry KW_CreateFrame))
 
@@ -358,17 +442,32 @@
                                          'label-alignment-set!))))))
       (KW_SetLabelAlignment label* halign hoffset valign voffset))))
 
-(define (label-color-set! label color)
-  (and-let* ((label* (widget-pointer label))
-             (r (color-r color))
-             (g (color-g color))
-             (b (color-b color))
-             (a (color-a color)))
-    (KW_SetLabelColor label* r g b a)))
+(define (label-text-color label)
+  (widget-text-color label KW_GetLabelTextColor))
+
+(define (label-text-color-set! label color)
+  (widget-text-color-set! label KW_SetLabelTextColor color))
+
+(define label-text-color (getter-with-setter label-text-color label-text-color-set!))
+
+(define (label-text-color-set? label)
+  (widget-text-color-set? label KW_WasLabelTextColorSet))
+
 
 (define (button gui parent text geometry)
   (define-widget 'button gui parent geometry
     (cut KW_CreateButton <> <> text <> <> <> <>)))
+
+(define (button-text-color button)
+  (widget-text-color button KW_GetButtonTextColor))
+
+(define (button-text-color-set! button color)
+  (widget-text-color-set! button KW_SetButtonTextColor color))
+
+(define button-text-color (getter-with-setter button-text-color button-text-color-set!))
+
+(define (button-text-color-set? button)
+  (widget-text-color-set? button KW_WasButtonTextColorSet))
 
 (define (editbox gui parent text geometry)
   (define-widget 'editbox gui parent geometry
@@ -379,52 +478,16 @@
              (font* (font-pointer font)))
     (KW_SetEditboxFont editbox* font*)))
 
-(define (widget-geometry widget #!optional absolute?)
-  (and-let* ((widget* (widget-pointer widget)))
-    (let ((geometry (rect 0 0 0 0))
-          (proc (if absolute? KW_GetWidgetAbsoluteGeometry KW_GetWidgetGeometry)))
-      (let-location ((x int)
-                     (y int)
-                     (w int)
-                     (h int))
-        (proc widget* (location x) (location y) (location w) (location h))
-        (set! (rect-x geometry) x)
-        (set! (rect-y geometry) y)
-        (set! (rect-w geometry) w)
-        (set! (rect-h geometry) h))
-      geometry)))
+(define (editbox-text-color editbox)
+  (widget-text-color editbox KW_GetEditboxTextColor))
 
-(define (widget-geometry-set! widget geometry)
-  (and-let* ((widget* (widget-pointer widget)))
-    (let ((x (rect-x geometry))
-          (y (rect-y geometry))
-          (w (rect-w geometry))
-          (h (rect-h geometry)))
-      (KW_SetWidgetGeometry widget* x y w h))))
+(define (editbox-text-color-set! editbox color)
+  (widget-text-color-set! editbox KW_SetEditboxTextColor color))
 
-(define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
+(define editbox-text-color (getter-with-setter editbox-text-color editbox-text-color-set!))
 
-(define (widget-center-with-rect-proc parent inner proc)
-  (let ((geometry (widget-geometry inner)))
-    (proc (widget-geometry parent) geometry)
-    (widget-geometry-set! inner geometry)))
-
-(define (widget-center-in-parent-horizontally! parent inner)
-  (widget-center-with-rect-proc parent inner rect-center-in-parent-horizontally!))
-
-(define (widget-center-in-parent-vertically! parent inner)
-  (widget-center-with-rect-proc parent inner rect-center-in-parent-vertically!))
-
-(define (widget-center-in-parent! parent inner)
-  (widget-center-with-rect-proc parent inner rect-center-in-parent!))
-
-(define (widget-fill-parent-horizontally! parent children weights padding valign)
-  (let ((count (length weights))
-        (parent (widget-geometry parent))
-        (rects (map widget-geometry children)))
-    (rect-fill-parent-horizontally! parent rects weights count padding valign)
-    (for-each (lambda (item) (widget-geometry-set! (car item) (cadr item)))
-              (zip children rects))))
+(define (editbox-text-color-set? editbox)
+  (widget-text-color-set? editbox KW_WasEditboxTextColorSet))
 
 ;;; handler interface
 
@@ -493,15 +556,20 @@
                (and-let* ((spec (alist-ref 'align attributes)))
                  (apply label-alignment-set! widget spec))
                (and-let* ((color (alist-ref 'color attributes)))
-                 (label-color-set! widget color))
+                 (label-text-color-set! widget color))
+               widget))
+            ((button)
+             (let ((widget (button gui parent text geometry)))
+               (and-let* ((color (alist-ref 'color attributes)))
+                 (button-text-color-set! widget color))
                widget))
             ((editbox)
              (let ((widget (editbox gui parent text geometry)))
                (and-let* ((font (alist-ref 'font attributes)))
                  (editbox-font-set! widget font))
+               (and-let* ((color (alist-ref 'color attributes)))
+                 (editbox-text-color-set! widget color))
                widget))
-            ((button)
-             (button gui parent text geometry))
             (else
              (abort (usage-error (format "Unimplemented widget tag name: ~a" tag) 'widget))))))
     (and-let* ((tileset (alist-ref 'tileset attributes)))
