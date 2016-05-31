@@ -23,7 +23,7 @@
    widgets)
 
 (import chicken scheme foreign)
-(use clojurian-syntax srfi-69 lolevel srfi-4 srfi-1 matchable data-structures)
+(use clojurian-syntax srfi-69 srfi-4 srfi-1 matchable data-structures)
 
 ;;; headers
 
