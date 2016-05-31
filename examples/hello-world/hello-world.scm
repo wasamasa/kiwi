@@ -38,12 +38,23 @@
 (define messagebox #f)
 
 (define (greet _widget _button)
-  (kw:show-widget! messagebox))
+  (when (not messagebox)
+    (kw:widgets gui
+     `(frame (@ (x 0) (y 0) (w 192) (h 120)
+                (id messagebox))
+       (label (@ (x 0) (y 0) (w 192) (h 48)
+                 (text "Hello World!")))
+       (button (@ (x 120) (y 84) (w 48) (h 24)
+                  (text "OK")
+                  (mouse-up ,messagebox-ok-clicked)))))
+    (set! messagebox (kw:widget-by-id 'messagebox))
+    (kw:widget-center-in-parent! (kw:widget-by-id 'frame) messagebox)))
 
 (define quit? #f)
 
 (define (messagebox-ok-clicked widget _button)
-  (kw:hide-widget! messagebox))
+  (kw:destroy-widget! messagebox #t)
+  (set! messagebox #f))
 
 (kw:widgets gui
  `(frame (@ (x 0) (y 0) (w ,width) (h ,height)
@@ -53,18 +64,7 @@
               (mouse-up ,greet)))
    (button (@ (x 192) (y 144) (w 96) (h 48)
               (text "Quit")
-              (mouse-up ,(lambda (_widget _button) (set! quit? #t)))))
-   (frame (@ (x 0) (y 0) (w 192) (h 120)
-             (hidden? #t)
-             (id messagebox))
-    (label (@ (x 0) (y 0) (w 192) (h 48)
-              (text "Hello World!")))
-    (button (@ (x 120) (y 84) (w 48) (h 24)
-               (text "OK")
-               (mouse-up ,messagebox-ok-clicked))))))
-
-(set! messagebox (kw:widget-by-id 'messagebox))
-(kw:widget-center-in-parent! (kw:widget-by-id 'frame) messagebox)
+              (mouse-up ,(lambda (_widget _button) (set! quit? #t)))))))
 
 (let loop ()
   (when (and (not (sdl2:quit-requested?)) (not quit?))

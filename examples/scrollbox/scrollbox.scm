@@ -22,7 +22,7 @@
 (define drag-mode #f)
 
 (define (drag-start widget x y)
-  (let ((geometry (kw:widget-geometry widget #t)))
+  (let ((geometry (kw:widget-absolute-geometry widget)))
     (if (and (> x (- (+ (kw:rect-x geometry) (kw:rect-w geometry)) 20))
              (> y (- (+ (kw:rect-y geometry) (kw:rect-h geometry)) 20)))
         (set! drag-mode #t)
