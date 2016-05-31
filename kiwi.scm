@@ -5,7 +5,7 @@
    init! process-events! paint! quit!
    tileset-surface-set!
    font-set!
-   font-color font-color-set!
+   text-color text-color-set!
    rect rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
@@ -227,25 +227,25 @@
              (font* (font-pointer font)))
     (KW_SetFont gui* font*)))
 
-(define (font-color gui)
+(define (text-color gui)
   (and-let* ((gui* (gui-pointer gui)))
     (let-location ((r int)
                    (g int)
                    (b int)
                    (a int))
-      (KW_GetFontColor gui* (location r) (location g) (location b) (location a))
+      (KW_GetTextColor gui* (location r) (location g) (location b) (location a))
       (color r g b a))))
 
-;; NOTE: upstream will probably adjust the names to match widgets
-(define (font-color-set! gui color)
+(define (text-color-set! gui color)
   (and-let* ((gui* (gui-pointer gui))
              (r (color-r color))
              (g (color-g color))
              (b (color-b color))
              (a (color-a color)))
-    (KW_SetFontColor gui* r g b a)))
+    (KW_SetTextColor gui* r g b a)))
 
-(define font-color (getter-with-setter font-color font-color-set!))
+(define text-color (getter-with-setter text-color text-color-set!))
+
 
 (define (tileset-surface-set! gui tileset)
   (and-let* ((gui* (gui-pointer gui))
