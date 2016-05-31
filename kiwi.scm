@@ -1,5 +1,5 @@
 (module kiwi
-  (create-sdl2-render-driver release-render-driver!
+  (create-sdl2-driver release-driver!
    load-surface release-surface!
    load-font release-font!
    init! process-events! paint! quit!
@@ -165,12 +165,12 @@
 
 ;;; GUI setup and teardown
 
-(define (create-sdl2-render-driver renderer window)
+(define (create-sdl2-driver renderer window)
   (if-let (driver* (KW_CreateSDL2RenderDriver renderer window))
-    (set-finalizer! (make-driver driver*) release-render-driver!)
+    (set-finalizer! (make-driver driver*) release-driver!)
     (abort (oom-error 'create-sdl2-render-driver))))
 
-(define (release-render-driver! driver)
+(define (release-driver! driver)
   (and-let* ((driver* (driver-pointer driver)))
     (KW_ReleaseRenderDriver driver*)
     (driver-pointer-set! driver #f)))

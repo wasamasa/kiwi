@@ -24,8 +24,8 @@
 (define-values (window renderer)
   (sdl2:create-window-and-renderer! width height))
 
-(define driver (kw:create-sdl2-render-driver (unwrap-renderer renderer)
-                                             (unwrap-window window)))
+(define driver (kw:create-sdl2-driver (unwrap-renderer renderer)
+                                      (unwrap-window window)))
 
 (define normal-bg (sdl2:make-color 100 100 200))
 (define normal-tileset (kw:load-surface driver "tileset.png"))

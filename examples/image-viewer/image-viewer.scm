@@ -29,8 +29,8 @@
 (define gray (sdl2:make-color 100 100 100))
 (define black (sdl2:make-color 0 0 0))
 
-(define driver (kw:create-sdl2-render-driver (unwrap-renderer renderer)
-                                             (unwrap-window window)))
+(define driver (kw:create-sdl2-driver (unwrap-renderer renderer)
+                                      (unwrap-window window)))
 
 (define tileset (kw:load-surface driver "tileset.png"))
 (define gui (kw:init! driver tileset))
