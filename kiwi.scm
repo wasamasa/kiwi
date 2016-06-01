@@ -320,12 +320,10 @@
 
 (define (driver-sdl2-renderer driver)
   (and-let* ((driver* (driver-pointer driver)))
-    ;; NOTE: returns raw pointer
     (KW_RenderDriverGetSDL2Renderer driver*)))
 
 (define (driver-sdl2-window driver)
   (and-let* ((driver* (driver-pointer driver)))
-    ;; NOTE: returns raw pointer
     (KW_RenderDriverGetSDL2Window driver*)))
 
 (define (load-surface driver filename)
@@ -333,6 +331,7 @@
     (if-let (surface* (KW_LoadSurface driver* filename))
       (set-finalizer! (make-surface surface*)
                       (cut release-surface! driver <>))
+      ;; TODO: the actual error appears twice, fix error printing upstream
       (abort (sdl2-error "Could not load surface" 'load-surface)))))
 
 (define (release-surface! driver surface)
@@ -346,6 +345,7 @@
     (if-let (font* (KW_LoadFont driver* fontname size))
       (set-finalizer! (make-font font*)
                       (cut release-font! driver <>))
+      ;; TODO: the actual error appears twice, fix error printing upstream
       (abort (sdl2-error "Could not load font" 'load-font)))))
 
 (define (release-font! driver font)
@@ -358,7 +358,6 @@
   (and-let* ((driver* (driver-pointer driver))
              (tileset* (surface-pointer tileset)))
     (if-let (gui* (KW_Init driver* tileset*))
-      ;; NOTE: an exit handler would make more sense
       (make-gui gui*)
       (abort (oom-error 'init!)))))
 
@@ -553,7 +552,7 @@
 
 ;;; widgets
 
-;; NOTE: even if the getter  (or setter) is missing for a property,
+;; NOTE: even if the getter (or setter) is missing for a property,
 ;; one could implement a stub and use getter-with-setter on both, then
 ;; report an upstream bug later
 
@@ -757,6 +756,12 @@
 
 (define (widget-center-in-parent! parent inner)
   (widget-center-with-rect-proc parent inner rect-center-in-parent!))
+
+;; TODO: (define (widget-layout-vertically!))
+
+;; TODO: (define (widget-layout-horizontally!))
+
+;; TODO: (define (widget-fill-parent-vertically!))
 
 (define (widget-fill-parent-horizontally! parent children weights padding valign)
   (let ((parent (widget-geometry parent))
