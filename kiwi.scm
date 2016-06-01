@@ -5,9 +5,9 @@
    load-font release-font!
    init! process-events! paint! quit!
    gui-driver gui-driver-set!
-   tileset-surface tileset-surface-set!
-   font font-set!
-   text-color text-color-set!
+   gui-tileset-surface gui-tileset-surface-set!
+   gui-font gui-font-set!
+   gui-text-color gui-text-color-set!
    rect rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
@@ -362,17 +362,6 @@
       (make-gui gui*)
       (abort (oom-error 'init!)))))
 
-(define (gui-driver gui)
-  (and-let* ((gui* (gui-pointer gui)))
-    (make-driver (KW_GetRenderer gui*))))
-
-(define (gui-driver-set! gui driver)
-  (and-let* ((gui* (gui-pointer gui))
-             (driver* (driver-pointer driver)))
-    (KW_SetRenderer gui* driver*)))
-
-(define gui-driver (getter-with-setter gui-driver gui-driver-set!))
-
 (define (process-events! gui)
   (and-let* ((gui* (gui-pointer gui)))
     (KW_ProcessEvents gui*)))
@@ -386,19 +375,30 @@
     (KW_Quit gui*)
     (gui-pointer-set! gui #f)))
 
-(define (font gui)
+(define (gui-driver gui)
+  (and-let* ((gui* (gui-pointer gui)))
+    (make-driver (KW_GetRenderer gui*))))
+
+(define (gui-driver-set! gui driver)
+  (and-let* ((gui* (gui-pointer gui))
+             (driver* (driver-pointer driver)))
+    (KW_SetRenderer gui* driver*)))
+
+(define gui-driver (getter-with-setter gui-driver gui-driver-set!))
+
+(define (gui-font gui)
   (and-let* ((gui* (gui-pointer gui)))
     ;; NOTE: no finalizer as loading up the font created one already
     (make-font (KW_GetFont gui*))))
 
-(define (font-set! gui font)
+(define (gui-font-set! gui font)
   (and-let* ((gui* (gui-pointer gui))
              (font* (font-pointer font)))
     (KW_SetFont gui* font*)))
 
-(define font (getter-with-setter font font-set!))
+(define gui-font (getter-with-setter gui-font gui-font-set!))
 
-(define (text-color gui)
+(define (gui-text-color gui)
   (and-let* ((gui* (gui-pointer gui)))
     (let-location ((r int)
                    (g int)
@@ -407,7 +407,7 @@
       (KW_GetTextColor gui* (location r) (location g) (location b) (location a))
       (color r g b a))))
 
-(define (text-color-set! gui color)
+(define (gui-text-color-set! gui color)
   (and-let* ((gui* (gui-pointer gui))
              (r (color-r color))
              (g (color-g color))
@@ -415,19 +415,19 @@
              (a (color-a color)))
     (KW_SetTextColor gui* r g b a)))
 
-(define text-color (getter-with-setter text-color text-color-set!))
+(define gui-text-color (getter-with-setter gui-text-color gui-text-color-set!))
 
-(define (tileset-surface gui)
+(define (gui-tileset-surface gui)
   (and-let* ((gui* (gui-pointer gui)))
     ;; NOTE: no finalizer as loading up the surface created one already
     (make-surface (KW_GetTilesetSurface gui*))))
 
-(define (tileset-surface-set! gui tileset)
+(define (gui-tileset-surface-set! gui tileset)
   (and-let* ((gui* (gui-pointer gui))
              (tileset* (surface-pointer tileset)))
     (KW_SetTilesetSurface gui* tileset*)))
 
-(define tileset-surface (getter-with-setter tileset-surface tileset-surface-set!))
+(define gui-tileset-surface (getter-with-setter gui-tileset-surface gui-tileset-surface-set!))
 
 ;;; rects
 

@@ -54,7 +54,7 @@
 (define gui (kw:init! driver tileset))
 
 (define font (kw:load-font driver "SourceSansPro-Semibold.ttf" 12))
-(kw:font-set! gui font)
+(kw:gui-font-set! gui font)
 
 (define (->int x)
   (inexact->exact (ceiling x)))

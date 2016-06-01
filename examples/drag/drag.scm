@@ -22,7 +22,7 @@
 (define drag-mode #f)
 
 (define (drag-start widget x y)
-  (let ((geometry (kw:widget-geometry widget #t)))
+  (let ((geometry (kw:widget-absolute-geometry widget)))
     (if (and (> x (- (+ (kw:rect-x geometry) (kw:rect-w geometry)) 20))
              (> y (- (+ (kw:rect-y geometry) (kw:rect-h geometry)) 20)))
         (set! drag-mode #t)
@@ -58,7 +58,7 @@
 (define gui (kw:init! driver tileset))
 
 (define font (kw:load-font driver "Fontin-Regular.ttf" 12))
-(kw:font-set! gui font)
+(kw:gui-font-set! gui font)
 
 (kw:widgets gui
  `(frame (@ (x 50) (y 50) (w 100) (h 100)

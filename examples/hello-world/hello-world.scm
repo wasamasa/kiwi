@@ -33,7 +33,7 @@
 (define gui (kw:init! driver tileset))
 
 (define font (kw:load-font driver "DejaVuSans.ttf" 11))
-(kw:font-set! gui font)
+(kw:gui-font-set! gui font)
 
 (define messagebox #f)
 

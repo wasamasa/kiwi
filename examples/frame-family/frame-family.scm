@@ -33,7 +33,7 @@
 (define gui (kw:init! driver tileset))
 
 (define font (kw:load-font driver "Fontin-Regular.ttf" 12))
-(kw:font-set! gui font)
+(kw:gui-font-set! gui font)
 
 (define frame-geometry (kw:rect 10 10 (/ width 2) (/ height 2)))
 (define label-geometry (kw:rect 0 0 (/ width 2) (/ height 2)))

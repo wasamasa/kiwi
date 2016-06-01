@@ -68,12 +68,12 @@
 (sdl2:render-draw-color-set! renderer futter-bg)
 
 (define gui (kw:init! driver futter-tileset))
-(kw:font-set! gui fontin)
+(kw:gui-font-set! gui fontin)
 
 (define (switch-to font tileset bg)
-  (kw:font-set! gui font)
+  (kw:gui-font-set! gui font)
   (sdl2:render-draw-color-set! renderer bg)
-  (kw:tileset-surface-set! gui tileset))
+  (kw:gui-tileset-surface-set! gui tileset))
 
 (define quit? #f)
 
