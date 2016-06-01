@@ -9,7 +9,7 @@
    gui-font gui-font-set!
    gui-text-color gui-text-color-set!
    rect rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
-   rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-fill-parent-horizontally!
+   rect-empty? enclosing-rect rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-layout-vertically! rect-layout-horizontally! rect-fill-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
    widget-type
    widget-by-id widgets-by-type
@@ -438,7 +438,25 @@
 (define rect-w (getter-with-setter rect-w rect-w-set!))
 (define rect-h (getter-with-setter rect-h rect-h-set!))
 
-;; TODO: (define (rect-empty? rect))
+;; NOTE: the following have been ported from KW_rect.h as it is too
+;; bothersome to wrap them with the FFI and involves more code than
+;; for the Scheme versions below
+
+(define (rect-empty? rect)
+  (and (zero? (rect-w rect)) (zero? (rect-h rect))))
+
+(define (extend-bounding-box r1 r2)
+  (let ((x (min (rect-x r1) (rect-x r2)))
+        (y (min (rect-y r1) (rect-y r2)))
+        (w (max (rect-w r1) (rect-w r2)))
+        (h (max (rect-w r1) (rect-w r2))))
+    (rect x y w h)))
+
+(define (enclosing-rect rects)
+  (when (null? rects)
+    (abort (usage-error "RECTS must be a list of at least one rect"
+                        'enclosing-rect)))
+  (fold extend-bounding-box (car rects) (cdr rects)))
 
 (define (rect-center-in-parent-horizontally! parent inner)
   (set! (rect-x inner) (- (/ (rect-w parent) 2) (/ (rect-w inner) 2))))
@@ -450,33 +468,79 @@
   (rect-center-in-parent-horizontally! parent inner)
   (rect-center-in-parent-vertically! parent inner))
 
-;; TODO: define corresponding widget helpers
+(define (rect-layout-vertically! rects padding #!optional halign)
+  (when (and halign (not (member halign '(left center right))))
+    (abort (usage-error "Invalid vertical alignment value"
+                        'rect-layout-vertically!)))
+  (let ((outer (enclosing-rect rects))
+        (current 0))
+    (for-each
+     (lambda (inner)
+       (set! (rect-y inner) current)
+       (set! current (+ current (rect-h inner) padding))
+       (case halign
+         ((left) (set! (rect-x inner) (rect-x outer)))
+         ((center)
+          (rect-center-in-parent-horizontally! outer inner)
+          (set! (rect-x inner) (+ (rect-x inner) (rect-x outer))))
+         ((right) (set! (rect-x inner) (- (rect-w outer) (rect-w inner))))))
+     rects)))
 
-;; TODO: (define (rect-layout-vertically!))
+(define (rect-layout-horizontally! rects padding #!optional valign)
+  (when (and valign (not (member valign '(top middle bottom))))
+    (abort (usage-error "Invalid horizontal alignment value"
+                        'rect-layout-horizontally!)))
+  (let ((outer (enclosing-rect rects))
+        (current 0))
+    (for-each
+     (lambda (inner)
+       (set! (rect-x inner) (+ current padding))
+       (set! current (+ (rect-w inner) (rect-x inner)))
+       (case valign
+         ((top) (set! (rect-y inner) (rect-y outer)))
+         ((middle)
+          (rect-center-in-parent-vertically! outer inner)
+          (set! (rect-y inner) (+ (rect-y inner) (rect-y outer))))
+         ((bottom) (set! (rect-y inner) (- (rect-h outer) (rect-h inner))))))
+     rects)))
 
-;; TODO: (define (rect-layout-horizontally!))
+(define (sum numbers)
+  (fold + 0 numbers))
 
-;; TODO: (define (rect-fill-parent-vertically!))
+(define (rect-fill-parent-vertically! parent rects weights padding)
+  (when (not (= (length rects) (length weights)))
+    (abort (usage-error "Length of RECTS and WEIGHTS must be equal"
+                        'rect-fill-parent-vertically!)))
+  (let* ((total (sum weights))
+         (base (/ (- (rect-h parent) (* padding (add1 (length weights)))) total))
+         (current 0))
+    (for-each
+     (lambda (inner weight)
+       (set! (rect-y inner) (+ current padding))
+       (set! (rect-h inner) (* base weight))
+       (set! current (+ (rect-y inner) (rect-h inner))))
+     rects weights)))
 
-(define (rect-fill-parent-horizontally! parent rects weights count padding valign)
-  (let* ((total (foldr + 0 weights))
-         (base (/ (- (rect-w parent) (* padding (add1 (length weights)))) total)))
-    (let loop ((current 0)
-               (rects rects)
-               (weights weights))
-      (when (pair? weights)
-        (let ((inner (car rects))
-              (weight (car weights)))
-          (set! (rect-x inner) (+ current padding))
-          (set! (rect-w inner) (* base weight))
-          (case valign
-            ((top) (set! (rect-y inner) 0))
-            ((middle) (rect-center-in-parent-vertically! parent inner))
-            ((bottom) (set! (rect-y inner) (- (rect-h parent) (rect-h inner)))))
-          (loop (+ (rect-x inner) (rect-w inner))
-                (cdr rects) (cdr weights)))))))
-
-;; TODO: (define (enclosing-rect))
+(define (rect-fill-parent-horizontally! parent rects weights padding valign)
+  (when (not (= (length rects) (length weights)))
+    (abort (usage-error "Length of RECTS and WEIGHTS must be equal"
+                        'rect-fill-parent-horizontally!)))
+  (when (not (member valign '(top middle bottom)))
+    (abort (usage-error "Invalid vertical alignment value"
+                        'rect-fill-parent-horizontally!)))
+  (let* ((total (sum weights))
+         (base (/ (- (rect-w parent) (* padding (add1 (length weights)))) total))
+         (current 0))
+    (for-each
+     (lambda (inner weight)
+       (set! (rect-x inner) (+ current padding))
+       (set! (rect-w inner) (* base weight))
+       (case valign
+         ((top) (set! (rect-y inner) 0))
+         ((middle) (rect-center-in-parent-vertically! parent inner))
+         ((bottom) (set! (rect-y inner) (- (rect-h parent) (rect-h inner)))))
+       (set! current (+ (rect-x inner) (rect-w inner))))
+     rects weights)))
 
 ;;; colors
 
@@ -695,10 +759,9 @@
   (widget-center-with-rect-proc parent inner rect-center-in-parent!))
 
 (define (widget-fill-parent-horizontally! parent children weights padding valign)
-  (let ((count (length weights))
-        (parent (widget-geometry parent))
+  (let ((parent (widget-geometry parent))
         (rects (map widget-geometry children)))
-    (rect-fill-parent-horizontally! parent rects weights count padding valign)
+    (rect-fill-parent-horizontally! parent rects weights padding valign)
     (for-each (lambda (item) (widget-geometry-set! (car item) (cadr item)))
               (zip children rects))))
 
