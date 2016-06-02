@@ -175,7 +175,7 @@
 (define KW_GetWidgetRenderer (foreign-lambda KW_RenderDriver* "KW_GetWidgetRenderer" KW_Widget*))
 (define KW_GetWidgetTilesetSurface (foreign-lambda KW_Surface* "KW_GetWidgetTilesetSurface" KW_Widget*))
 (define KW_SetWidgetTilesetSurface (foreign-lambda void "KW_SetWidgetTilesetSurface" KW_Widget* KW_Surface*))
-(define KW_ReparentWidget (foreign-lambda void "KW_ReparentWidget" KW_Widget* KW_Widget*))
+(define KW_ReparentWidget (foreign-lambda void "KW_ReparentWidget" KW_Widget* KW_Widget*-or-null))
 (define KW_GetWidgetParent (foreign-lambda KW_Widget*-or-null "KW_GetWidgetParent" KW_Widget*))
 (define KW_GetWidgetChildren (foreign-lambda c-pointer "KW_GetWidgetChildren" KW_Widget* int*))
 (define KW_GetWidgetChild (foreign-lambda* KW_Widget* ((c-pointer p) (int i)) "KW_Widget * const * children = p; C_return(children[i]);"))
@@ -603,9 +603,9 @@
                   (reverse children))))))))
 
 (define (reparent-widget! widget parent)
-  (and-let* ((widget* (widget-pointer widget))
-             (parent* (widget-pointer parent)))
-    (KW_ReparentWidget widget* parent*)))
+  (and-let* ((widget* (widget-pointer widget)))
+    (let ((parent* (and parent (widget-pointer parent))))
+      (KW_ReparentWidget widget* parent*))))
 
 (define (bring-widget-to-front! widget)
   (and-let* ((widget* (widget-pointer widget)))
