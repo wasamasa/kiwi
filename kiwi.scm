@@ -1,17 +1,17 @@
 (module kiwi
   (create-sdl2-driver release-driver!
-   driver-sdl2-renderer driver-sdl2-window
-   load-surface release-surface!
-   load-font release-font!
-   init! process-events! paint! quit!
+   driver? driver-sdl2-renderer driver-sdl2-window
+   surface? load-surface release-surface!
+   font? load-font release-font!
+   gui? init! process-events! paint! quit!
    gui-driver gui-driver-set!
    gui-tileset-surface gui-tileset-surface-set!
    gui-font gui-font-set!
    gui-text-color gui-text-color-set!
-   rect rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
+   rect rect? rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
    rect-empty? enclosing-rect rect-center-in-parent! rect-center-in-parent-vertically! rect-center-in-parent-horizontally! rect-layout-vertically! rect-layout-horizontally! rect-fill-parent-vertically! rect-fill-parent-horizontally!
-   color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
-   widget-type
+   color color? color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
+   widget? widget-type
    widget-gui widget-driver
    widget-parent widget-children
    reparent-widget! bring-widget-to-front! widget-focus-set! widget-clip-children?-set! destroy-widget!
@@ -21,11 +21,11 @@
    widget-tileset-surface widget-tileset-surface-set!
    widget-geometry widget-absolute-geometry widget-composed-geometry widget-geometry-set!
    widget-center-in-parent! widget-center-in-parent-vertically! widget-center-in-parent-horizontally! widget-layout-vertically! widget-layout-horizontally! widget-fill-parent-vertically! widget-fill-parent-horizontally!
-   frame
-   scrollbox scrollbox-horizontal-scroll! scrollbox-vertical-scroll!
-   label label-text-set! label-icon-set! label-alignment-set! label-style-set! label-font label-font-set! label-text-color label-text-color-set! label-text-color-set?
-   button button-text-set! button-icon-set! button-font-set! button-text-color button-text-color-set! button-text-color-set?
-   editbox editbox-text editbox-text-set! editbox-cursor-position editbox-cursor-position-set! editbox-font editbox-font-set! editbox-text-color editbox-text-color-set! editbox-text-color-set?
+   frame frame?
+   scrollbox scrollbox? scrollbox-horizontal-scroll! scrollbox-vertical-scroll!
+   label label? label-text-set! label-icon-set! label-alignment-set! label-style-set! label-font label-font-set! label-text-color label-text-color-set! label-text-color-set?
+   button button? button-text-set! button-icon-set! button-font-set! button-text-color button-text-color-set! button-text-color-set?
+   editbox editbox? editbox-text editbox-text-set! editbox-cursor-position editbox-cursor-position-set! editbox-font editbox-font-set! editbox-text-color editbox-text-color-set! editbox-text-color-set?
    handler-set! handler-remove!
    widgets widget-by-id)
 
@@ -798,17 +798,21 @@
                                           (widget-geometry parent)
                                           <> weights padding valign)))
 
-;; TODO: define widget predicates
-
 ;; frame
 
 (define (frame gui parent geometry)
   (define-widget 'frame gui parent geometry KW_CreateFrame))
 
+(define (frame? arg)
+  (and (widget? arg) (eqv? (widget-type arg) 'frame)))
+
 ;; scrollbox
 
 (define (scrollbox gui parent geometry)
   (define-widget 'scrollbox gui parent geometry KW_CreateScrollbox))
+
+(define (scrollbox? arg)
+  (and (widget? arg) (eqv? (widget-type arg) 'scrollbox)))
 
 (define (scrollbox-vertical-scroll! scrollbox amount)
   (and-let* ((scrollbox* (widget-pointer scrollbox)))
@@ -823,6 +827,9 @@
 (define (label gui parent text geometry)
   (define-widget 'label gui parent geometry
     (cut KW_CreateLabel <> <> text <> <> <> <>)))
+
+(define (label? arg)
+  (and (widget? arg) (eqv? (widget-type arg) 'label)))
 
 (define (label-text-set! label text)
   (and-let* ((label* (widget-pointer label)))
@@ -894,6 +901,9 @@
   (define-widget 'button gui parent geometry
     (cut KW_CreateButton <> <> text <> <> <> <>)))
 
+(define (button? arg)
+  (and (widget? arg) (eqv? (widget-type arg) 'button)))
+
 (define (button-text-set! button text)
   (and-let* ((button* (widget-pointer button)))
     (KW_SetButtonText button* text)))
@@ -927,6 +937,9 @@
 (define (editbox gui parent text geometry)
   (define-widget 'editbox gui parent geometry
     (cut KW_CreateEditbox <> <> text <> <> <> <>)))
+
+(define (editbox? arg)
+  (and (widget? arg) (eqv? (widget-type arg) 'editbox)))
 
 (define (editbox-text editbox)
   (and-let* ((editbox* (widget-pointer editbox)))
@@ -972,7 +985,6 @@
 
 ;;; handler interface
 
-;; TODO: write a getter thing for generic set!?
 (define (handler-set! widget type proc)
   (and-let* ((widget* (widget-pointer widget)))
     (let ((handlers (widget-handlers widget)))
