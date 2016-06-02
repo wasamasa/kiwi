@@ -1,0 +1,2 @@
+(repo git "git://github.com/wasamasa/{egg-name}.git")
+(uri targz "https://github.com/wasamasa/{egg-name}/tarball/{egg-release}")
