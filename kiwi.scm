@@ -765,7 +765,7 @@
 (define (widget-fill-parent-vertically! parent children weights padding)
   (widget-alter-geometries! children (cut rect-fill-parent-vertically!
                                           (widget-geometry parent)
-                                          <> weights padding valign)))
+                                          <> weights padding)))
 
 (define (widget-fill-parent-horizontally! parent children weights padding valign)
   (widget-alter-geometries! children (cut rect-fill-parent-horizontally!
