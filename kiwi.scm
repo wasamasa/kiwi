@@ -9,7 +9,7 @@
    gui-font gui-font-set!
    gui-text-color gui-text-color-set!
    rect rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
-   rect-empty? enclosing-rect rect-center-in-parent! rect-center-in-parent-horizontally! rect-center-in-parent-vertically! rect-layout-vertically! rect-layout-horizontally! rect-fill-parent-vertically! rect-fill-parent-horizontally!
+   rect-empty? enclosing-rect rect-center-in-parent! rect-center-in-parent-vertically! rect-center-in-parent-horizontally! rect-layout-vertically! rect-layout-horizontally! rect-fill-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
    widget-type
    widget-by-id widgets-by-type
@@ -28,7 +28,7 @@
    button button-text-set! button-icon-set! button-font-set! button-text-color button-text-color-set! button-text-color-set?
    editbox editbox-text editbox-text-set! editbox-cursor-position editbox-cursor-position-set! editbox-font editbox-font-set! editbox-text-color editbox-text-color-set! editbox-text-color-set?
    widget-geometry widget-absolute-geometry widget-composed-geometry widget-geometry-set!
-   widget-center-in-parent! widget-center-in-parent-horizontally! widget-center-in-parent-vertically! widget-layout-vertically! widget-layout-horizontally! widget-fill-parent-vertically! widget-fill-parent-horizontally!
+   widget-center-in-parent! widget-center-in-parent-vertically! widget-center-in-parent-horizontally! widget-layout-vertically! widget-layout-horizontally! widget-fill-parent-vertically! widget-fill-parent-horizontally!
    handler-set! handler-remove!
    widgets)
 
@@ -457,15 +457,15 @@
                         'enclosing-rect)))
   (fold extend-bounding-box (car rects) (cdr rects)))
 
-(define (rect-center-in-parent-horizontally! parent inner)
-  (set! (rect-x inner) (- (/ (rect-w parent) 2) (/ (rect-w inner) 2))))
-
 (define (rect-center-in-parent-vertically! parent inner)
   (set! (rect-y inner) (- (/ (rect-h parent) 2) (/ (rect-h inner) 2))))
 
+(define (rect-center-in-parent-horizontally! parent inner)
+  (set! (rect-x inner) (- (/ (rect-w parent) 2) (/ (rect-w inner) 2))))
+
 (define (rect-center-in-parent! parent inner)
-  (rect-center-in-parent-horizontally! parent inner)
-  (rect-center-in-parent-vertically! parent inner))
+  (rect-center-in-parent-vertically! parent inner)
+  (rect-center-in-parent-horizontally! parent inner))
 
 (define (rect-layout-vertically! rects padding #!optional halign)
   (when (and halign (not (member halign '(left center right))))
@@ -748,11 +748,11 @@
     (proc parent-geometry inner-geometry)
     (widget-geometry-set! inner inner-geometry)))
 
-(define (widget-center-in-parent-horizontally! parent inner)
-  (widget-center-with-rect-proc! parent inner rect-center-in-parent-horizontally!))
-
 (define (widget-center-in-parent-vertically! parent inner)
   (widget-center-with-rect-proc! parent inner rect-center-in-parent-vertically!))
+
+(define (widget-center-in-parent-horizontally! parent inner)
+  (widget-center-with-rect-proc! parent inner rect-center-in-parent-horizontally!))
 
 (define (widget-center-in-parent! parent inner)
   (widget-center-with-rect-proc! parent inner rect-center-in-parent!))
