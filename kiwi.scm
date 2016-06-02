@@ -12,25 +12,22 @@
    rect-empty? enclosing-rect rect-center-in-parent! rect-center-in-parent-vertically! rect-center-in-parent-horizontally! rect-layout-vertically! rect-layout-horizontally! rect-fill-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
    widget-type
-   widget-by-id
    widget-gui widget-driver
-   widget-tileset-surface widget-tileset-surface-set!
-   reparent-widget!
    widget-parent widget-children
-   widget-bring-to-front! widget-focus-set! widget-clip-children?-set!
-   destroy-widget!
+   reparent-widget! bring-widget-to-front! widget-focus-set! widget-clip-children?-set! destroy-widget!
    hide-widget! show-widget! widget-hidden?
    block-widget-input-events! unblock-widget-input-events! widget-input-events-blocked?
    enable-widget-hint! disable-widget-hint! query-widget-hint
+   widget-tileset-surface widget-tileset-surface-set!
+   widget-geometry widget-absolute-geometry widget-composed-geometry widget-geometry-set!
+   widget-center-in-parent! widget-center-in-parent-vertically! widget-center-in-parent-horizontally! widget-layout-vertically! widget-layout-horizontally! widget-fill-parent-vertically! widget-fill-parent-horizontally!
    frame
    scrollbox scrollbox-horizontal-scroll! scrollbox-vertical-scroll!
    label label-text-set! label-icon-set! label-alignment-set! label-style-set! label-font label-font-set! label-text-color label-text-color-set! label-text-color-set?
    button button-text-set! button-icon-set! button-font-set! button-text-color button-text-color-set! button-text-color-set?
    editbox editbox-text editbox-text-set! editbox-cursor-position editbox-cursor-position-set! editbox-font editbox-font-set! editbox-text-color editbox-text-color-set! editbox-text-color-set?
-   widget-geometry widget-absolute-geometry widget-composed-geometry widget-geometry-set!
-   widget-center-in-parent! widget-center-in-parent-vertically! widget-center-in-parent-horizontally! widget-layout-vertically! widget-layout-horizontally! widget-fill-parent-vertically! widget-fill-parent-horizontally!
    handler-set! handler-remove!
-   widgets)
+   widgets widget-by-id)
 
 (import chicken scheme foreign)
 (use clojurian-syntax srfi-69 srfi-4 srfi-1 matchable data-structures)
@@ -53,15 +50,15 @@
 
 ;; KW_label.h
 
-;; enum KW_LabelHorizontalAlignment
-(define KW_LABEL_ALIGN_LEFT (foreign-value "KW_LABEL_ALIGN_LEFT" int))
-(define KW_LABEL_ALIGN_CENTER (foreign-value "KW_LABEL_ALIGN_CENTER" int))
-(define KW_LABEL_ALIGN_RIGHT (foreign-value "KW_LABEL_ALIGN_RIGHT" int))
-
 ;; enum KW_LabelVerticalAlignment
 (define KW_LABEL_ALIGN_TOP (foreign-value "KW_LABEL_ALIGN_TOP" int))
 (define KW_LABEL_ALIGN_MIDDLE (foreign-value "KW_LABEL_ALIGN_MIDDLE" int))
 (define KW_LABEL_ALIGN_BOTTOM (foreign-value "KW_LABEL_ALIGN_BOTTOM" int))
+
+;; enum KW_LabelHorizontalAlignment
+(define KW_LABEL_ALIGN_LEFT (foreign-value "KW_LABEL_ALIGN_LEFT" int))
+(define KW_LABEL_ALIGN_CENTER (foreign-value "KW_LABEL_ALIGN_CENTER" int))
+(define KW_LABEL_ALIGN_RIGHT (foreign-value "KW_LABEL_ALIGN_RIGHT" int))
 
 ;; KW_renderdriver.h
 
@@ -585,22 +582,6 @@
   (and-let* ((widget* (widget-pointer widget)))
     (make-driver (KW_GetWidgetRenderer widget*))))
 
-(define (widget-tileset-surface widget)
-  (and-let* ((widget* (widget-pointer widget)))
-    (make-surface (KW_GetWidgetTilesetSurface widget*))))
-
-(define (widget-tileset-surface-set! widget tileset)
-  (and-let* ((widget* (widget-pointer widget))
-             (tileset* (surface-pointer tileset)))
-    (KW_SetWidgetTilesetSurface widget* tileset*)))
-
-(define widget-tileset-surface (getter-with-setter widget-tileset-surface widget-tileset-surface-set!))
-
-(define (reparent-widget! widget parent)
-  (and-let* ((widget* (widget-pointer widget))
-             (parent* (widget-pointer parent)))
-    (KW_ReparentWidget widget* parent*)))
-
 (define (widget-parent widget)
   (and-let* ((widget* (widget-pointer widget)))
     (if-let (parent* (KW_GetWidgetParent widget*))
@@ -621,7 +602,12 @@
                     (loop (add1 i) (cons child children)))
                   (reverse children))))))))
 
-(define (widget-bring-to-front! widget)
+(define (reparent-widget! widget parent)
+  (and-let* ((widget* (widget-pointer widget))
+             (parent* (widget-pointer parent)))
+    (KW_ReparentWidget widget* parent*)))
+
+(define (bring-widget-to-front! widget)
   (and-let* ((widget* (widget-pointer widget)))
     (KW_BringToFront widget*)))
 
@@ -687,6 +673,17 @@
   (and-let* ((widget* (widget-pointer widget)))
     (let ((hint (symbol->widget-hint hint 'query-widget-hint)))
       (KW_QueryWidgetHint widget* hint))))
+
+(define (widget-tileset-surface widget)
+  (and-let* ((widget* (widget-pointer widget)))
+    (make-surface (KW_GetWidgetTilesetSurface widget*))))
+
+(define (widget-tileset-surface-set! widget tileset)
+  (and-let* ((widget* (widget-pointer widget))
+             (tileset* (surface-pointer tileset)))
+    (KW_SetWidgetTilesetSurface widget* tileset*)))
+
+(define widget-tileset-surface (getter-with-setter widget-tileset-surface widget-tileset-surface-set!))
 
 (define (widget-text-color widget proc)
   (and-let* ((label* (widget-pointer label)))
@@ -787,13 +784,13 @@
 (define (scrollbox gui parent geometry)
   (define-widget 'scrollbox gui parent geometry KW_CreateScrollbox))
 
-(define (scrollbox-horizontal-scroll! scrollbox amount)
-  (and-let* ((scrollbox* (widget-pointer scrollbox)))
-    (KW_ScrollboxHorizontalScroll scrollbox* amount)))
-
 (define (scrollbox-vertical-scroll! scrollbox amount)
   (and-let* ((scrollbox* (widget-pointer scrollbox)))
     (KW_ScrollboxVerticalScroll scrollbox* amount)))
+
+(define (scrollbox-horizontal-scroll! scrollbox amount)
+  (and-let* ((scrollbox* (widget-pointer scrollbox)))
+    (KW_ScrollboxHorizontalScroll scrollbox* amount)))
 
 ;; label
 
@@ -1115,7 +1112,6 @@
       (widget-id-set! widget id))
     widget))
 
-;; (widgets gui [parent] sxml)
 (define (widgets gui sxml-or-parent #!optional arg)
   (define (inner gui sxml parent)
     (match sxml
