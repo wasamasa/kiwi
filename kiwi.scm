@@ -28,7 +28,7 @@
    button button-text-set! button-icon-set! button-font-set! button-text-color button-text-color-set! button-text-color-set?
    editbox editbox-text editbox-text-set! editbox-cursor-position editbox-cursor-position-set! editbox-font editbox-font-set! editbox-text-color editbox-text-color-set! editbox-text-color-set?
    widget-geometry widget-absolute-geometry widget-composed-geometry widget-geometry-set!
-   widget-center-in-parent! widget-center-in-parent-horizontally! widget-center-in-parent-vertically! widget-fill-parent-horizontally!
+   widget-center-in-parent! widget-center-in-parent-horizontally! widget-center-in-parent-vertically! widget-layout-vertically! widget-layout-horizontally! widget-fill-parent-vertically! widget-fill-parent-horizontally!
    handler-set! handler-remove!
    widgets)
 
@@ -742,33 +742,43 @@
 
 (define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
 
-(define (widget-center-with-rect-proc parent inner proc)
+(define (widget-center-with-rect-proc! parent inner proc)
   (and-let* ((parent-geometry (widget-geometry parent))
              (inner-geometry (widget-geometry inner)))
     (proc parent-geometry inner-geometry)
     (widget-geometry-set! inner inner-geometry)))
 
 (define (widget-center-in-parent-horizontally! parent inner)
-  (widget-center-with-rect-proc parent inner rect-center-in-parent-horizontally!))
+  (widget-center-with-rect-proc! parent inner rect-center-in-parent-horizontally!))
 
 (define (widget-center-in-parent-vertically! parent inner)
-  (widget-center-with-rect-proc parent inner rect-center-in-parent-vertically!))
+  (widget-center-with-rect-proc! parent inner rect-center-in-parent-vertically!))
 
 (define (widget-center-in-parent! parent inner)
-  (widget-center-with-rect-proc parent inner rect-center-in-parent!))
+  (widget-center-with-rect-proc! parent inner rect-center-in-parent!))
 
-;; TODO: (define (widget-layout-vertically!))
+(define (widget-alter-geometries! widgets proc)
+  (let ((rects (map widget-geometry widgets)))
+    (proc rects)
+    (for-each widget-geometry-set! widgets rects)))
 
-;; TODO: (define (widget-layout-horizontally!))
+(define (widget-layout-vertically! widgets padding #!optional halign)
+  (widget-alter-geometries! widgets (cut rect-layout-vertically!
+                                         <> padding halign)))
 
-;; TODO: (define (widget-fill-parent-vertically!))
+(define (widget-layout-horizontally! widgets padding #!optional valign)
+  (widget-alter-geometries! widgets (cut rect-layout-horizontally!
+                                         <> padding valign)))
+
+(define (widget-fill-parent-vertically! parent children weights padding)
+  (widget-alter-geometries! children (cut rect-fill-parent-vertically!
+                                          (widget-geometry parent)
+                                          <> weights padding valign)))
 
 (define (widget-fill-parent-horizontally! parent children weights padding valign)
-  (let ((parent (widget-geometry parent))
-        (rects (map widget-geometry children)))
-    (rect-fill-parent-horizontally! parent rects weights padding valign)
-    (for-each (lambda (item) (widget-geometry-set! (car item) (cadr item)))
-              (zip children rects))))
+  (widget-alter-geometries! children (cut rect-fill-parent-horizontally!
+                                          (widget-geometry parent)
+                                          <> weights padding valign)))
 
 ;; TODO: define widget predicates
 
