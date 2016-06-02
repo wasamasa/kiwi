@@ -12,7 +12,7 @@
    rect-empty? enclosing-rect rect-center-in-parent! rect-center-in-parent-vertically! rect-center-in-parent-horizontally! rect-layout-vertically! rect-layout-horizontally! rect-fill-parent-vertically! rect-fill-parent-horizontally!
    color color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
    widget-type
-   widget-by-id widgets-by-type
+   widget-by-id
    widget-gui widget-driver
    widget-tileset-surface widget-tileset-surface-set!
    reparent-widget!
@@ -557,11 +557,6 @@
 ;; report an upstream bug later
 
 (define widget-table (make-hash-table))
-
-(define (widgets-by-type type)
-  (filter
-   (lambda (widget) (eqv? (widget-type widget) type))
-   (hash-table-values widget-table)))
 
 (define (widget-by-id id)
   (find
