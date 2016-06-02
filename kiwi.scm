@@ -30,7 +30,7 @@
    widgets widget-by-id)
 
 (import chicken scheme foreign)
-(use clojurian-syntax srfi-69 srfi-4 srfi-1 matchable data-structures)
+(use clojurian-syntax srfi-69 srfi-4 srfi-1 matchable data-structures lolevel)
 
 ;;; headers
 
@@ -240,14 +240,40 @@
 
 ;;; auxiliary records
 
+(define (format-pointer pointer)
+  (if pointer
+      (sprintf "0x~x" (pointer->address pointer))
+      "NULL"))
+
 (define-record driver pointer)
+(define-record-printer (driver d out)
+  (fprintf out "#<driver: ~a>" (format-pointer (driver-pointer d))))
+
 (define-record surface pointer)
+(define-record-printer (surface s out)
+  (fprintf out "#<surface: ~a>" (format-pointer (surface-pointer s))))
+
 (define-record font pointer)
+(define-record-printer (font f out)
+  (fprintf out "#<font: ~a>" (format-pointer (font-pointer f))))
+
 (define-record gui pointer)
+(define-record-printer (gui g out)
+  (fprintf out "#<gui: ~a>" (format-pointer (gui-pointer g))))
+
 (define-record widget handlers type id pointer)
+(define-record-printer (widget w out)
+  (fprintf out "#<~a: ~a>" (widget-type w) (format-pointer (widget-pointer w))))
 
 (define-record rect x y w h)
+(define-record-printer (rect r out)
+  (fprintf out "#<rect: ~a|~a ~ax~a>"
+           (rect-x r) (rect-y r) (rect-w r) (rect-h r)))
+
 (define-record color r g b a)
+(define-record-printer (color c out)
+  (fprintf out "#<color: ~a|~a|~a|~a>"
+           (color-r c) (color-g c) (color-b c) (color-a c)))
 
 ;;; generic handlers
 
