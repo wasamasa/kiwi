@@ -30,7 +30,9 @@
    widgets widget-by-id)
 
 (import chicken scheme foreign)
-(use clojurian-syntax srfi-69 srfi-4 srfi-1 matchable data-structures lolevel)
+(use extras data-structures lolevel
+     srfi-1 srfi-4 srfi-69
+     clojurian-syntax matchable)
 
 ;;; headers
 
