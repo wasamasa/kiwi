@@ -91,6 +91,7 @@
 (define-foreign-type KW_Widget* (nonnull-c-pointer (struct "KW_Widget")))
 (define-foreign-type KW_Widget*-or-null (c-pointer (struct "KW_Widget")))
 (define-foreign-type int* (nonnull-c-pointer int))
+(define-foreign-type unsigned-int* (nonnull-c-pointer unsigned-int))
 
 ;;; foreign functions
 
@@ -179,7 +180,7 @@
 (define KW_SetWidgetTilesetSurface (foreign-lambda void "KW_SetWidgetTilesetSurface" KW_Widget* KW_Surface*))
 (define KW_ReparentWidget (foreign-lambda void "KW_ReparentWidget" KW_Widget* KW_Widget*-or-null))
 (define KW_GetWidgetParent (foreign-lambda KW_Widget*-or-null "KW_GetWidgetParent" KW_Widget*))
-(define KW_GetWidgetChildren (foreign-lambda c-pointer "KW_GetWidgetChildren" KW_Widget* int*))
+(define KW_GetWidgetChildren (foreign-lambda c-pointer "KW_GetWidgetChildren" KW_Widget* unsigned-int*))
 (define KW_GetWidgetChild (foreign-lambda* KW_Widget* ((c-pointer p) (int i)) "KW_Widget * const * children = p; C_return(children[i]);"))
 ;; NOTE: useless for stock widgets
 ;; (define KW_GetWidgetData)
