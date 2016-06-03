@@ -280,7 +280,7 @@
 
 ;;; generic handlers
 
-(define (dispatch-event! widget* type . args)
+(define (dispatch-event! widget* type #!rest args)
   (let* ((widget (hash-table-ref widget-table widget*))
          (handlers (widget-handlers widget))
          (handler (hash-table-ref handlers type)))
@@ -318,7 +318,7 @@
 
 ;;; errors
 
-(define (define-error location message . condition)
+(define (define-error location message #!rest condition)
   (let ((base (make-property-condition 'exn 'location location 'message message))
         (extra (apply make-property-condition condition)))
     (make-composite-condition base extra)))
