@@ -4,20 +4,8 @@
 
 (import (only sdl2-internals unwrap-renderer unwrap-window))
 
-;;; clean-up code
-
 (sdl2:set-main-ready!)
 (sdl2:init! '(everything))
-
-(on-exit sdl2:quit!)
-
-(current-exception-handler
- (let ((original-handler (current-exception-handler)))
-   (lambda (exception)
-     (sdl2:quit!)
-     (original-handler exception))))
-
-;;; actual example
 
 (define drag-mode #f)
 
@@ -84,3 +72,4 @@
     (loop)))
 
 (kw:quit! gui)
+(sdl2:quit!)
