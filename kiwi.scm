@@ -90,6 +90,7 @@
 (define-foreign-type KW_GUI* (nonnull-c-pointer (struct "KW_GUI")))
 (define-foreign-type KW_Widget* (nonnull-c-pointer (struct "KW_Widget")))
 (define-foreign-type KW_Widget*-or-null (c-pointer (struct "KW_Widget")))
+(define-foreign-type KW_Color* (nonnull-c-pointer (struct "KW_Color")))
 (define-foreign-type int* (nonnull-c-pointer int))
 (define-foreign-type unsigned-int* (nonnull-c-pointer unsigned-int))
 
@@ -145,8 +146,8 @@
 (define KW_SetLabelIcon (foreign-lambda* void ((KW_Widget* label) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetLabelIcon(label, &r);"))
 (define KW_GetLabelFont (foreign-lambda KW_Font* "KW_GetLabelFont" KW_Widget*))
 (define KW_SetLabelFont (foreign-lambda void "KW_SetLabelFont" KW_Widget* KW_Font*))
-(define KW_GetLabelTextColor (foreign-lambda* void ((KW_Widget* widget) (int* r) (int* g) (int* b) (int* a)) "KW_Color c = KW_GetLabelTextColor(widget); *r = c.r, *g = c.g, *b = c.b, *a = c.a;"))
-(define KW_SetLabelTextColor (foreign-lambda* void ((KW_Widget* label) (unsigned-byte r) (unsigned-byte g) (unsigned-byte b) (unsigned-byte a)) "KW_Color c = { r, g, b, a }; KW_SetLabelTextColor(label, c);"))
+(define KW_GetLabelTextColor (foreign-lambda* void ((KW_Widget* widget) (KW_Color* c)) "KW_Color color = KW_GetLabelTextColor(widget); c->r = color.r, c->g = color.g, c->b = color.b, c->a = color.a;"))
+(define KW_SetLabelTextColor (foreign-lambda* void ((KW_Widget* label) (KW_Color* c)) "KW_Color color = { c->r, c->g, c->b, c->a }; KW_SetLabelTextColor(label, color);"))
 (define KW_WasLabelTextColorSet (foreign-lambda bool "KW_WasLabelTextColorSet" KW_Widget*))
 
 ;; KW_button.h
@@ -154,8 +155,8 @@
 (define KW_SetButtonText (foreign-lambda void "KW_SetButtonText" KW_Widget* nonnull-c-string))
 (define KW_SetButtonIcon (foreign-lambda* void ((KW_Widget* button) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetButtonIcon(button, &r);"))
 (define KW_SetButtonFont (foreign-lambda void "KW_SetButtonFont" KW_Widget* KW_Font*))
-(define KW_GetButtonTextColor (foreign-lambda* void ((KW_Widget* button) (int* r) (int* g) (int* b) (int* a)) "KW_Color c = KW_GetButtonTextColor(button); *r = c.r, *g = c.g, *b = c.b, *a = c.a;"))
-(define KW_SetButtonTextColor (foreign-lambda* void ((KW_Widget* button) (unsigned-byte r) (unsigned-byte g) (unsigned-byte b) (unsigned-byte a)) "KW_Color c = { r, g, b, a }; KW_SetButtonTextColor(button, c);"))
+(define KW_GetButtonTextColor (foreign-lambda* void ((KW_Widget* button) (KW_Color* c)) "KW_Color color = KW_GetButtonTextColor(button); c->r = color.r, c->g = color.g, c->b = color.b, c->a = color.a;"))
+(define KW_SetButtonTextColor (foreign-lambda* void ((KW_Widget* button) (KW_Color* c)) "KW_Color color = { c->r, c->g, c->b, c->a }; KW_SetButtonTextColor(button, color);"))
 (define KW_WasButtonTextColorSet (foreign-lambda bool "KW_WasButtonTextColorSet" KW_Widget*))
 
 ;; KW_editbox.h
@@ -166,8 +167,8 @@
 (define KW_SetEditboxCursorPosition (foreign-lambda void "KW_SetEditboxCursorPosition" KW_Widget* unsigned-int))
 (define KW_GetEditboxFont (foreign-lambda KW_Font* "KW_GetEditboxFont" KW_Widget*))
 (define KW_SetEditboxFont (foreign-lambda void "KW_SetEditboxFont" KW_Widget* KW_Font*))
-(define KW_GetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (int* r) (int* g) (int* b) (int* a)) "KW_Color c = KW_GetEditboxTextColor(editbox); *r = c.r, *g = c.g, *b = c.b, *a = c.a;"))
-(define KW_SetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (unsigned-byte r) (unsigned-byte g) (unsigned-byte b) (unsigned-byte a)) "KW_Color c = { r, g, b, a }; KW_SetEditboxTextColor(editbox, c);"))
+(define KW_GetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (KW_Color* c)) "KW_Color color = KW_GetEditboxTextColor(editbox); c->r = color.r, c->g = color.g, c->b = color.b, c->a = color.a;"))
+(define KW_SetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (KW_Color* c)) "KW_Color color = { c->r, c->g, c->b, c->a }; KW_SetEditboxTextColor(editbox, color);"))
 (define KW_WasEditboxTextColorSet (foreign-lambda bool "KW_WasEditboxTextColorSet" KW_Widget*))
 
 ;; KW_widget.h
@@ -273,7 +274,7 @@
   (fprintf out "#<rect: ~a|~a ~ax~a>"
            (rect-x r) (rect-y r) (rect-w r) (rect-h r)))
 
-(define-record color r g b a)
+(define-record color storage)
 (define-record-printer (color c out)
   (fprintf out "#<color: ~a|~a|~a|~a>"
            (color-r c) (color-g c) (color-b c) (color-a c)))
@@ -569,11 +570,57 @@
 
 ;;; colors
 
-(define color make-color)
+(define (color-pointer color)
+  (make-locative (color-storage color)))
+
+(define KW_Color-size (foreign-type-size (struct "KW_Color")))
+
+(define (color r g b a)
+  (let* ((color (make-color (make-blob KW_Color-size)))
+         (color* (color-pointer color)))
+    ((foreign-lambda* void ((KW_Color* c) (unsigned-byte r) (unsigned-byte g) (unsigned-byte b) (unsigned-byte a))
+       "c->r = r, c->g = g, c->b = b, c->a = a;")
+     color* r g b a)
+    color))
+
+(define (color-r color)
+  (let ((color* (color-pointer color)))
+    ((foreign-lambda* unsigned-byte ((KW_Color* c)) "C_return(c->r);") color*)))
+
+(define (color-r-set! color r)
+  (let ((color* (color-pointer color)))
+    ((foreign-lambda* void ((KW_Color* c) (unsigned-byte r)) "c->r = r;") color* r)))
 
 (define color-r (getter-with-setter color-r color-r-set!))
+
+(define (color-g color)
+  (let ((color* (color-pointer color)))
+    ((foreign-lambda* unsigned-byte ((KW_Color* c)) "C_return(c->g);") color*)))
+
+(define (color-g-set! color g)
+  (let ((color* (color-pointer color)))
+    ((foreign-lambda* void ((KW_Color* c) (unsigned-byte g)) "c->g = g;") color* g)))
+
 (define color-g (getter-with-setter color-g color-g-set!))
+
+(define (color-b color)
+  (let ((color* (color-pointer color)))
+    ((foreign-lambda* unsigned-byte ((KW_Color* c)) "C_return(c->b);") color*)))
+
+(define (color-b-set! color b)
+  (let ((color* (color-pointer color)))
+    ((foreign-lambda* void ((KW_Color* c) (unsigned-byte b)) "c->b = b;") color* b)))
+
 (define color-b (getter-with-setter color-b color-b-set!))
+
+(define (color-a color)
+  (let ((color* (color-pointer color)))
+    ((foreign-lambda* unsigned-byte ((KW_Color* c)) "C_return(c->a);") color*)))
+
+(define (color-a-set! color a)
+  (let ((color* (color-pointer color)))
+    ((foreign-lambda* void ((KW_Color* c) (unsigned-byte a)) "c->a = a;") color* a)))
+
 (define color-a (getter-with-setter color-a color-a-set!))
 
 ;;; widgets
@@ -715,21 +762,16 @@
 (define widget-tileset-surface (getter-with-setter widget-tileset-surface widget-tileset-surface-set!))
 
 (define (widget-text-color widget proc)
-  (and-let* ((widget* (widget-pointer widget)))
-    (let-location ((r int)
-                   (g int)
-                   (b int)
-                   (a int))
-      (proc widget* (location r) (location g) (location b) (location a))
-      (color r g b a))))
+  (and-let* ((widget* (widget-pointer widget))
+             (color (make-blob KW_Color-size))
+             (color* (color-pointer color)))
+    (proc widget* color*)
+    color))
 
 (define (widget-text-color-set! widget proc color)
   (and-let* ((widget* (widget-pointer widget))
-             (r (color-r color))
-             (g (color-g color))
-             (b (color-b color))
-             (a (color-a color)))
-    (proc widget* r g b a)))
+             (color* (color-pointer color)))
+    (proc widget* color*)))
 
 (define (widget-text-color-set? widget proc)
   (and-let* ((widget* (widget-pointer widget)))
