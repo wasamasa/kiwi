@@ -9,7 +9,7 @@
    gui-font gui-font-set!
    gui-text-color gui-text-color-set!
    rect rect? rect-x rect-y rect-w rect-h rect-x-set! rect-y-set! rect-w-set! rect-h-set!
-   rect-empty? enclosing-rect rect-center-in-parent! rect-center-in-parent-vertically! rect-center-in-parent-horizontally! rect-layout-vertically! rect-layout-horizontally! rect-fill-parent-vertically! rect-fill-parent-horizontally!
+   rect-empty? enclosing-rect rect-center-in-parent! rect-center-in-parent-vertically! rect-center-in-parent-horizontally! rect-layout-vertically! rect-layout-horizontally! rect-fill-parent-vertically! rect-fill-parent-horizontally! rect-margin!
    color color? color-r color-g color-b color-a color-r-set! color-g-set! color-b-set! color-a-set!
    widget? widget-type
    widget-gui widget-driver
@@ -20,7 +20,7 @@
    enable-widget-hint! disable-widget-hint! query-widget-hint
    widget-tileset-surface widget-tileset-surface-set!
    widget-geometry widget-absolute-geometry widget-composed-geometry widget-geometry-set!
-   widget-center-in-parent! widget-center-in-parent-vertically! widget-center-in-parent-horizontally! widget-layout-vertically! widget-layout-horizontally! widget-fill-parent-vertically! widget-fill-parent-horizontally!
+   widget-center-in-parent! widget-center-in-parent-vertically! widget-center-in-parent-horizontally! widget-layout-vertically! widget-layout-horizontally! widget-fill-parent-vertically! widget-fill-parent-horizontally! widget-margin!
    frame frame?
    scrollbox scrollbox? scrollbox-horizontal-scroll! scrollbox-vertical-scroll!
    label label? label-text-set! label-icon-set! label-alignment-set! label-style-set! label-font label-font-set! label-text-color label-text-color-set! label-text-color-set?
@@ -607,6 +607,12 @@
        (set! current (+ (rect-x inner) (rect-w inner))))
      rects weights)))
 
+(define (rect-margin! parent inner margin)
+  (set! (rect-x inner) margin)
+  (set! (rect-y inner) margin)
+  (set! (rect-w inner) (- (rect-w parent) (* 2 margin)))
+  (set! (rect-h inner) (- (rect-h parent) (* 2 margin))))
+
 ;;; colors
 
 (define (color-pointer color)
@@ -837,8 +843,8 @@
 (define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
 
 (define (widget-center-with-rect-proc! parent inner proc)
-  (and-let* ((parent-geometry (widget-geometry parent))
-             (inner-geometry (widget-geometry inner)))
+  (let ((parent-geometry (widget-geometry parent))
+        (inner-geometry (widget-geometry inner)))
     (proc parent-geometry inner-geometry)
     (widget-geometry-set! inner inner-geometry)))
 
@@ -873,6 +879,12 @@
   (widget-alter-geometries! children (cut rect-fill-parent-horizontally!
                                           (widget-geometry parent)
                                           <> weights padding valign)))
+
+(define (widget-margin! parent inner margin)
+  (let ((parent-geometry (widget-geometry parent))
+        (inner-geometry (widget-geometry inner)))
+    (rect-margin! parent-geometry inner-geometry margin)
+    (widget-geometry-set! inner inner-geometry)))
 
 ;; frame
 
