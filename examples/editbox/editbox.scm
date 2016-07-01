@@ -20,9 +20,6 @@
 (define tileset (kw:load-surface driver "tileset.png"))
 (define gui (kw:init! driver tileset))
 
-(define font (kw:load-font driver "DejaVuSans.ttf" 12))
-(kw:gui-font-set! gui font)
-
 (define quit? #f)
 
 (define (ok-clicked _widget _button)
@@ -36,7 +33,7 @@
    (label (@ (x 0) (y 100) (w 60) (h 30)
              (text "Label")
              (id label)))
-   (editbox (@ (x 0) (y 100) (w 100) (h 30)
+   (editbox (@ (x 0) (y 100) (w 100) (h 40)
                (text "Edit me!")
                (id editbox)))
    (button (@ (x 250) (y 170) (w 40) (h 40)
