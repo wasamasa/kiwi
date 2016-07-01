@@ -24,7 +24,7 @@
    frame frame?
    scrollbox scrollbox? scrollbox-horizontal-scroll! scrollbox-vertical-scroll!
    label label? label-text-set! label-icon-set! label-alignment-set! label-style-set! label-font label-font-set! label-text-color label-text-color-set! label-text-color-set?
-   button button? button-text-set! button-icon-set! button-font-set! button-text-color button-text-color-set! button-text-color-set?
+   button button* button? button-label button-label-set!
    editbox editbox? editbox-text editbox-text-set! editbox-cursor-position editbox-cursor-position-set! editbox-font editbox-font-set! editbox-text-color editbox-text-color-set! editbox-text-color-set?
    handler-set! handler-remove!
    widgets widget-by-id)
@@ -151,13 +151,10 @@
 (define KW_WasLabelTextColorSet (foreign-lambda bool "KW_WasLabelTextColorSet" KW_Widget*))
 
 ;; KW_button.h
-(define KW_CreateButton (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateButton(gui, parent, text, &r));"))
-(define KW_SetButtonText (foreign-lambda void "KW_SetButtonText" KW_Widget* nonnull-c-string))
-(define KW_SetButtonIcon (foreign-lambda* void ((KW_Widget* button) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetButtonIcon(button, &r);"))
-(define KW_SetButtonFont (foreign-lambda void "KW_SetButtonFont" KW_Widget* KW_Font*))
-(define KW_GetButtonTextColor (foreign-lambda* void ((KW_Widget* button) (KW_Color* c)) "KW_Color color = KW_GetButtonTextColor(button); c->r = color.r, c->g = color.g, c->b = color.b, c->a = color.a;"))
-(define KW_SetButtonTextColor (foreign-lambda* void ((KW_Widget* button) (KW_Color* c)) "KW_Color color = { c->r, c->g, c->b, c->a }; KW_SetButtonTextColor(button, color);"))
-(define KW_WasButtonTextColorSet (foreign-lambda bool "KW_WasButtonTextColorSet" KW_Widget*))
+(define KW_CreateButton (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (KW_Widget*-or-null label) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateButton(gui, parent, label, &r));"))
+;; (define KW_CreateButtonAndLabel (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateButtonAndLabel(gui, parent, text, &r));"))
+(define KW_GetButtonLabel (foreign-lambda KW_Widget* "KW_GetButtonLabel" KW_Widget*))
+(define KW_SetButtonLabel (foreign-lambda KW_Widget* "KW_SetButtonLabel" KW_Widget* KW_Widget*))
 
 ;; KW_editbox.h
 (define KW_CreateEditbox (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateEditbox(gui, parent, text, &r));"))
@@ -942,40 +939,33 @@
 
 ;; button
 
+;; NOTE: this doesn't use KW_CreateButtonAndLabel to track the label
 (define (button gui parent text geometry)
-  (define-widget 'button gui parent geometry
-    (cut KW_CreateButton <> <> text <> <> <> <>)))
+  (let* ((label (label gui #f text geometry))
+         (label* (widget-pointer label)))
+    (define-widget 'button gui parent geometry
+      (cut KW_CreateButton <> <> label* <> <> <> <>))))
+
+(define (button* gui parent label geometry)
+  (let ((label* (and label (widget-pointer label))))
+    (define-widget 'button gui parent geometry
+      (cut KW_CreateButton <> <> label* <> <> <> <>))))
 
 (define (button? arg)
   (and (widget? arg) (eqv? (widget-type arg) 'button)))
 
-(define (button-text-set! button text)
-  (and-let* ((button* (widget-pointer button)))
-    (KW_SetButtonText button* text)))
-
-(define (button-icon-set! button clip)
-  (and-let* ((button* (widget-pointer button)))
-    (let ((x (rect-x clip))
-          (y (rect-y clip))
-          (w (rect-w clip))
-          (h (rect-h clip)))
-      (KW_SetButtonIcon button* x y w h))))
-
-(define (button-font-set! button font)
+(define (button-label button)
   (and-let* ((button* (widget-pointer button))
-             (font* (font-pointer font)))
-    (KW_SetButtonFont button* font*)))
+             (label* (KW_GetButtonLabel button*)))
+    (hash-table-ref widget-table label*)))
 
-(define (button-text-color button)
-  (widget-text-color button KW_GetButtonTextColor))
+(define (button-label-set! button label)
+  (and-let* ((button* (widget-pointer button))
+             (label* (widget-pointer label))
+             (old-label* (KW_SetButtonLabel button* label*)))
+    (hash-table-ref widget-table old-label*)))
 
-(define (button-text-color-set! button color)
-  (widget-text-color-set! button KW_SetButtonTextColor color))
-
-(define button-text-color (getter-with-setter button-text-color button-text-color-set!))
-
-(define (button-text-color-set? button)
-  (widget-text-color-set? button KW_WasButtonTextColorSet))
+(define button-label (getter-with-setter button-label button-label-set!))
 
 ;; editbox
 
@@ -1156,20 +1146,7 @@
                  (label-text-color-set! widget color))
                widget))
             ((button)
-             (let ((widget (button gui parent text geometry)))
-               (and-let* ((spec (alist-ref 'icon attributes))
-                          (spec (attributes->alist spec))
-                          (x (alist-ref 'x spec))
-                          (y (alist-ref 'y spec))
-                          (w (alist-ref 'w spec))
-                          (h (alist-ref 'h spec))
-                          (geometry (rect x y w h)))
-                 (button-icon-set! widget geometry))
-               (and-let* ((font (alist-ref 'font attributes)))
-                 (button-font-set! widget font))
-               (and-let* ((color (alist-ref 'color attributes)))
-                 (button-text-color-set! widget color))
-               widget))
+             (button gui parent text geometry))
             ((editbox)
              (let ((widget (editbox gui parent text geometry)))
                (and-let* ((position (alist-ref 'cursor-position attributes)))
