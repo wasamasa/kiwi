@@ -90,6 +90,7 @@
 (define-foreign-type KW_GUI* (nonnull-c-pointer (struct "KW_GUI")))
 (define-foreign-type KW_Widget* (nonnull-c-pointer (struct "KW_Widget")))
 (define-foreign-type KW_Widget*-or-null (c-pointer (struct "KW_Widget")))
+(define-foreign-type KW_Rect* (nonnull-c-pointer (struct "KW_Rect")))
 (define-foreign-type KW_Color* (nonnull-c-pointer (struct "KW_Color")))
 (define-foreign-type int* (nonnull-c-pointer int))
 (define-foreign-type unsigned-int* (nonnull-c-pointer unsigned-int))
@@ -131,19 +132,19 @@
 (define KW_RenderDriverGetSDL2Window (foreign-lambda SDL_Window* "KW_RenderDriverGetSDL2Window" KW_RenderDriver*))
 
 ;; KW_frame.h
-(define KW_CreateFrame (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateFrame(gui, parent, &r));"))
+(define KW_CreateFrame (foreign-lambda KW_Widget* "KW_CreateFrame" KW_GUI* KW_Widget*-or-null KW_Rect*))
 
 ;; KW_scrollbox.h
-(define KW_CreateScrollbox (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (int x) (int y) (int w) (int h))" KW_Rect r = { x, y, w, h }; C_return(KW_CreateScrollbox(gui, parent, &r));"))
+(define KW_CreateScrollbox (foreign-lambda KW_Widget* "KW_CreateScrollbox" KW_GUI* KW_Widget*-or-null KW_Rect*))
 (define KW_ScrollboxHorizontalScroll (foreign-lambda void "KW_ScrollboxHorizontalScroll" KW_Widget* int))
 (define KW_ScrollboxVerticalScroll (foreign-lambda void "KW_ScrollboxVerticalScroll" KW_Widget* int))
 
 ;; KW_label.h
-(define KW_CreateLabel (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateLabel(gui, parent, text, &r));"))
+(define KW_CreateLabel (foreign-lambda KW_Widget* "KW_CreateLabel" KW_GUI* KW_Widget*-or-null nonnull-c-string KW_Rect*))
 (define KW_SetLabelText (foreign-lambda void "KW_SetLabelText" KW_Widget* nonnull-c-string))
 (define KW_SetLabelAlignment (foreign-lambda void "KW_SetLabelAlignment" KW_Widget* (enum "KW_LabelHorizontalAlignment") int (enum "KW_LabelVerticalAlignment") int))
 (define KW_SetLabelStyle (foreign-lambda void "KW_SetLabelStyle" KW_Widget* (enum "KW_RenderDriver_TextStyle")))
-(define KW_SetLabelIcon (foreign-lambda* void ((KW_Widget* label) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetLabelIcon(label, &r);"))
+(define KW_SetLabelIcon (foreign-lambda void "KW_SetLabelIcon" KW_Widget* KW_Rect*))
 (define KW_GetLabelFont (foreign-lambda KW_Font* "KW_GetLabelFont" KW_Widget*))
 (define KW_SetLabelFont (foreign-lambda void "KW_SetLabelFont" KW_Widget* KW_Font*))
 (define KW_GetLabelTextColor (foreign-lambda* void ((KW_Widget* widget) (KW_Color* out)) "KW_Color c = KW_GetLabelTextColor(widget); out->r = c.r, out->g = c.g, out->b = c.b, out->a = c.a;"))
@@ -151,13 +152,13 @@
 (define KW_WasLabelTextColorSet (foreign-lambda bool "KW_WasLabelTextColorSet" KW_Widget*))
 
 ;; KW_button.h
-(define KW_CreateButton (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (KW_Widget*-or-null label) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateButton(gui, parent, label, &r));"))
-;; (define KW_CreateButtonAndLabel (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateButtonAndLabel(gui, parent, text, &r));"))
+(define KW_CreateButton (foreign-lambda KW_Widget* "KW_CreateButton" KW_GUI* KW_Widget*-or-null KW_Widget*-or-null KW_Rect*))
+;; (define KW_CreateButtonAndLabel (foreign-lambda KW_Widget* "KW_CreateButtonAndLabel" KW_GUI* KW_Widget*-or-null nonnull-c-string KW_Rect*))
 (define KW_GetButtonLabel (foreign-lambda KW_Widget* "KW_GetButtonLabel" KW_Widget*))
 (define KW_SetButtonLabel (foreign-lambda KW_Widget* "KW_SetButtonLabel" KW_Widget* KW_Widget*))
 
 ;; KW_editbox.h
-(define KW_CreateEditbox (foreign-lambda* KW_Widget* ((KW_GUI* gui) (KW_Widget*-or-null parent) (nonnull-c-string text) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; C_return(KW_CreateEditbox(gui, parent, text, &r));"))
+(define KW_CreateEditbox (foreign-lambda KW_Widget* "KW_CreateEditbox" KW_GUI* KW_Widget*-or-null nonnull-c-string KW_Rect*))
 (define KW_GetEditboxText (foreign-lambda c-string "KW_GetEditboxText" KW_Widget*))
 (define KW_SetEditboxText (foreign-lambda void "KW_SetEditboxText" KW_Widget* nonnull-c-string))
 (define KW_GetEditboxCursorPosition (foreign-lambda unsigned-int "KW_GetEditboxCursorPosition" KW_Widget*))
@@ -198,10 +199,10 @@
 (define KW_EnableWidgetHint (foreign-lambda void "KW_EnableWidgetHint" KW_Widget* (enum "KW_WidgetHint") bool))
 (define KW_DisableWidgetHint (foreign-lambda void "KW_DisableWidgetHint" KW_Widget* (enum "KW_WidgetHint") bool))
 (define KW_QueryWidgetHint (foreign-lambda bool "KW_QueryWidgetHint" KW_Widget* (enum "KW_WidgetHint")))
-(define KW_GetWidgetGeometry (foreign-lambda* void ((KW_Widget* widget) (int* x) (int* y) (int* w) (int* h)) "KW_Rect r; KW_GetWidgetGeometry(widget, &r); *x = r.x, *y = r.y, *w = r.w, *h = r.h;"))
-(define KW_GetWidgetAbsoluteGeometry (foreign-lambda* void ((KW_Widget* widget) (int* x) (int* y) (int* w) (int* h)) "KW_Rect r; KW_GetWidgetAbsoluteGeometry(widget, &r); *x = r.x, *y = r.y, *w = r.w, *h = r.h;"))
-(define KW_GetWidgetComposedGeometry (foreign-lambda* void ((KW_Widget* widget) (int* x) (int* y) (int* w) (int* h)) "KW_Rect r; KW_GetWidgetComposedGeometry(widget, &r); *x = r.x, *y = r.y, *w = r.w, *h = r.h;"))
-(define KW_SetWidgetGeometry (foreign-lambda* void ((KW_Widget* widget) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetWidgetGeometry(widget, &r);"))
+(define KW_GetWidgetGeometry (foreign-lambda void "KW_GetWidgetGeometry" KW_Widget* KW_Rect*))
+(define KW_GetWidgetAbsoluteGeometry (foreign-lambda void "KW_GetWidgetAbsoluteGeometry" KW_Widget* KW_Rect*))
+(define KW_GetWidgetComposedGeometry (foreign-lambda void "KW_GetWidgetComposedGeometry" KW_Widget* KW_Rect*))
+(define KW_SetWidgetGeometry (foreign-lambda void "KW_SetWidgetGeometry" KW_Widget* KW_Rect*))
 ;; (define KW_GetWidgetTilesetTexture)
 
 (define KW_AddWidgetMouseOverHandler (foreign-lambda void "KW_AddWidgetMouseOverHandler" KW_Widget* (function void (KW_Widget*))))
@@ -266,7 +267,7 @@
 (define-record-printer (widget w out)
   (fprintf out "#<~a: ~a>" (widget-type w) (format-pointer (widget-pointer w))))
 
-(define-record rect x y w h)
+(define-record rect storage)
 (define-record-printer (rect r out)
   (fprintf out "#<rect: ~a|~a ~ax~a>"
            (rect-x r) (rect-y r) (rect-w r) (rect-h r)))
@@ -449,11 +450,57 @@
 
 ;;; rects
 
-(define rect make-rect)
+(define (rect-pointer rect)
+  (make-locative (rect-storage rect)))
+
+(define KW_Rect-size (foreign-type-size (struct "KW_Rect")))
+
+(define (rect x y w h)
+  (let* ((rect (make-rect (make-blob KW_Rect-size)))
+         (rect* (rect-pointer rect)))
+    ((foreign-lambda* void ((KW_Rect* r) (int x) (int y) (int w) (int h))
+       "r->x = x, r->y = y, r->w = w, r->h = h;")
+     rect* x y w h)
+    rect))
+
+(define (rect-x rect)
+  (let ((rect* (rect-pointer rect)))
+    ((foreign-lambda* int ((KW_Rect* r)) "C_return(r->x);") rect*)))
+
+(define (rect-x-set! rect x)
+  (let ((rect* (rect-pointer rect)))
+    ((foreign-lambda* void ((KW_Rect* r) (int x)) "r->x = x;") rect* x)))
 
 (define rect-x (getter-with-setter rect-x rect-x-set!))
+
+(define (rect-y rect)
+  (let ((rect* (rect-pointer rect)))
+    ((foreign-lambda* int ((KW_Rect* r)) "C_return(r->y);") rect*)))
+
+(define (rect-y-set! rect y)
+  (let ((rect* (rect-pointer rect)))
+    ((foreign-lambda* void ((KW_Rect* r) (int y)) "r->y = y;") rect* y)))
+
 (define rect-y (getter-with-setter rect-y rect-y-set!))
+
+(define (rect-w rect)
+  (let ((rect* (rect-pointer rect)))
+    ((foreign-lambda* int ((KW_Rect* r)) "C_return(r->w);") rect*)))
+
+(define (rect-w-set! rect w)
+  (let ((rect* (rect-pointer rect)))
+    ((foreign-lambda* void ((KW_Rect* r) (int w)) "r->w = w;") rect* w)))
+
 (define rect-w (getter-with-setter rect-w rect-w-set!))
+
+(define (rect-h rect)
+  (let ((rect* (rect-pointer rect)))
+    ((foreign-lambda* int ((KW_Rect* r)) "C_return(r->h);") rect*)))
+
+(define (rect-h-set! rect h)
+  (let ((rect* (rect-pointer rect)))
+    ((foreign-lambda* void ((KW_Rect* r) (int h)) "r->h = h;") rect* h)))
+
 (define rect-h (getter-with-setter rect-h rect-h-set!))
 
 ;; NOTE: the following have been ported from KW_rect.h as it is too
@@ -631,11 +678,8 @@
 (define (define-widget type gui parent geometry proc)
   (and-let* ((gui* (gui-pointer gui)))
     (let ((parent* (and parent (widget-pointer parent)))
-          (x (rect-x geometry))
-          (y (rect-y geometry))
-          (w (rect-w geometry))
-          (h (rect-h geometry)))
-      (if-let (widget* (proc gui* parent* x y w h))
+          (geometry* (rect-pointer geometry)))
+      (if-let (widget* (proc gui* parent* geometry*))
         (let* ((handlers (make-hash-table eqv? eqv?-hash))
                (widget (make-widget handlers type #f widget*)))
           (hash-table-set! widget-table widget* widget)
@@ -770,13 +814,11 @@
     (proc widget*)))
 
 (define (%widget-geometry widget proc)
-  (and-let* ((widget* (widget-pointer widget)))
-    (let-location ((x int)
-                   (y int)
-                   (w int)
-                   (h int))
-      (proc widget* (location x) (location y) (location w) (location h))
-      (rect x y w h))))
+  (and-let* ((widget* (widget-pointer widget))
+             (geometry (rect 0 0 0 0))
+             (geometry* (rect-pointer geometry)))
+    (proc widget* geometry*)
+    geometry))
 
 (define (widget-absolute-geometry widget)
   (%widget-geometry widget KW_GetWidgetAbsoluteGeometry))
@@ -788,12 +830,9 @@
   (%widget-geometry widget KW_GetWidgetGeometry))
 
 (define (widget-geometry-set! widget geometry)
-  (and-let* ((widget* (widget-pointer widget)))
-    (let ((x (rect-x geometry))
-          (y (rect-y geometry))
-          (w (rect-w geometry))
-          (h (rect-h geometry)))
-      (KW_SetWidgetGeometry widget* x y w h))))
+  (and-let* ((widget* (widget-pointer widget))
+             (geometry* (rect-pointer geometry)))
+    (KW_SetWidgetGeometry widget* geometry*)))
 
 (define widget-geometry (getter-with-setter widget-geometry widget-geometry-set!))
 
@@ -863,7 +902,7 @@
 
 (define (label gui parent text geometry)
   (define-widget 'label gui parent geometry
-    (cut KW_CreateLabel <> <> text <> <> <> <>)))
+    (cut KW_CreateLabel <> <> text <>)))
 
 (define (label? arg)
   (and (widget? arg) (eqv? (widget-type arg) 'label)))
@@ -874,11 +913,8 @@
 
 (define (label-icon-set! label clip)
   (and-let* ((label* (widget-pointer label)))
-    (let ((x (rect-x clip))
-          (y (rect-y clip))
-          (w (rect-w clip))
-          (h (rect-h clip)))
-      (KW_SetLabelIcon label* x y w h))))
+    (let ((clip* (rect-pointer clip)))
+      (KW_SetLabelIcon label* clip*))))
 
 (define (label-alignment-set! label halign hoffset valign voffset)
   (and-let* ((label* (widget-pointer label)))
@@ -939,12 +975,12 @@
   (let* ((label (label gui #f text geometry))
          (label* (widget-pointer label)))
     (define-widget 'button gui parent geometry
-      (cut KW_CreateButton <> <> label* <> <> <> <>))))
+      (cut KW_CreateButton <> <> label* <>))))
 
 (define (button* gui parent label geometry)
   (let ((label* (and label (widget-pointer label))))
     (define-widget 'button gui parent geometry
-      (cut KW_CreateButton <> <> label* <> <> <> <>))))
+      (cut KW_CreateButton <> <> label* <>))))
 
 (define (button? arg)
   (and (widget? arg) (eqv? (widget-type arg) 'button)))
@@ -966,7 +1002,7 @@
 
 (define (editbox gui parent text geometry)
   (define-widget 'editbox gui parent geometry
-    (cut KW_CreateEditbox <> <> text <> <> <> <>)))
+    (cut KW_CreateEditbox <> <> text <>)))
 
 (define (editbox? arg)
   (and (widget? arg) (eqv? (widget-type arg) 'editbox)))
