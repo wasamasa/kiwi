@@ -26,6 +26,7 @@
    label label? label-text-set! label-icon-set! label-alignment-set! label-style-set! label-font label-font-set! label-text-color label-text-color-set! label-text-color-set?
    button button* button? button-label button-label-set!
    editbox editbox? editbox-text editbox-text-set! editbox-cursor-position editbox-cursor-position-set! editbox-font editbox-font-set! editbox-text-color editbox-text-color-set! editbox-text-color-set?
+   toggle toggle-checked? toggle-checked?-set!
    handler-set! handler-remove!
    widgets widget-by-id)
 
@@ -44,6 +45,7 @@
 #include "KW_label.h"
 #include "KW_button.h"
 #include "KW_editbox.h"
+#include "KW_toggle.h"
 #include "KW_widget.h"
 #include "KW_renderdriver_sdl2.h"
 <#
@@ -168,6 +170,10 @@
 (define KW_GetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (KW_Color* out)) "KW_Color c = KW_GetEditboxTextColor(editbox); out->r = c.r, out->g = c.g, out->b = c.b, out->a = c.a;"))
 (define KW_SetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (KW_Color* c)) "KW_SetEditboxTextColor(editbox, *c);"))
 (define KW_WasEditboxTextColorSet (foreign-lambda bool "KW_WasEditboxTextColorSet" KW_Widget*))
+
+(define KW_CreateToggle (foreign-lambda KW_Widget* "KW_CreateToggle" KW_GUI* KW_Widget*-or-null KW_Rect*))
+(define KW_IsToggleChecked (foreign-lambda bool "KW_IsToggleChecked" KW_Widget*))
+(define KW_SetToggleChecked (foreign-lambda void "KW_SetToggleChecked" KW_Widget* bool))
 
 ;; KW_widget.h
 ;; NOTE: this requires integrating callbacks for paint/destroy
@@ -1061,6 +1067,21 @@
 (define (editbox-text-color-set? editbox)
   (widget-text-color-set? editbox KW_WasEditboxTextColorSet))
 
+;; toggle
+
+(define (toggle gui parent geometry)
+  (define-widget 'toggle gui parent geometry KW_CreateToggle))
+
+(define (toggle-checked? toggle)
+  (and-let* ((toggle* (widget-pointer toggle)))
+    (KW_IsToggleChecked toggle*)))
+
+(define (toggle-checked?-set! toggle checked?)
+  (and-let* ((toggle* (widget-pointer toggle)))
+    (KW_SetToggleChecked toggle* checked?)))
+
+(define toggle-checked? (getter-with-setter toggle-checked? toggle-checked?-set!))
+
 ;;; handler interface
 
 (define (handler-set! widget type proc)
@@ -1198,6 +1219,11 @@
                  (editbox-font-set! widget font))
                (and-let* ((color (alist-ref 'color attributes)))
                  (editbox-text-color-set! widget color))
+               widget))
+            ((toggle)
+             (let ((widget (toggle gui parent geometry)))
+               (and-let* ((checked? (alist-ref 'checked? attributes)))
+                 (toggle-checked?-set! toggle checked?))
                widget))
             (else
              (abort (usage-error (format "Unimplemented widget tag name: ~a" tag) 'widget))))))
