@@ -35,6 +35,8 @@
      srfi-1 srfi-4 srfi-69
      clojurian-syntax matchable)
 
+;; TODO: megawidget example?
+
 ;;; headers
 
 #>
@@ -121,6 +123,8 @@
 
 ;; KW_renderdriver.h
 (define KW_LoadFont (foreign-lambda KW_Font* "KW_LoadFont" KW_RenderDriver* nonnull-c-string unsigned-int))
+;; NOTE: not worth supporting either
+;; (define KW_LoadFontFromMemory)
 (define KW_ReleaseFont (foreign-lambda void "KW_ReleaseFont" KW_RenderDriver* KW_Font*))
 (define KW_LoadSurface (foreign-lambda KW_Surface* "KW_LoadSurface" KW_RenderDriver* nonnull-c-string))
 (define KW_ReleaseSurface (foreign-lambda void "KW_ReleaseSurface" KW_RenderDriver* KW_Surface*))
@@ -210,6 +214,7 @@
 (define KW_GetWidgetComposedGeometry (foreign-lambda void "KW_GetWidgetComposedGeometry" KW_Widget* KW_Rect*))
 (define KW_SetWidgetGeometry (foreign-lambda void "KW_SetWidgetGeometry" KW_Widget* KW_Rect*))
 ;; (define KW_GetWidgetTilesetTexture)
+;; TODO: KW_IsCursorOverWidget KW_IsCursorPressedOnWidget KW_IsCursorReleasedOnWidget
 
 (define KW_AddWidgetMouseOverHandler (foreign-lambda void "KW_AddWidgetMouseOverHandler" KW_Widget* (function void (KW_Widget*))))
 (define KW_RemoveWidgetMouseOverHandler (foreign-lambda void "KW_RemoveWidgetMouseOverHandler" KW_Widget* (function void (KW_Widget*))))
