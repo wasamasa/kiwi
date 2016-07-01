@@ -14,7 +14,7 @@
 (install-extension
  'kiwi
  '("kiwi.so" "kiwi.import.so")
- '((version "0.2")))
+ '((version "0.3")))
 
 ;; querying cmake leaves those behind
 (remove-file* "CMakeFiles")

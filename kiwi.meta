@@ -3,4 +3,6 @@
  (license "zlib")
  (category ui)
  (depends clojurian matchable)
- (foreign-depends "KW" "SDL2"))
+ (foreign-depends "KW" "SDL2")
+ (files "kiwi.scm" "kiwi.meta" "kiwi.setup" "kiwi.release-info"
+        "LICENSE" "README.rst"))
