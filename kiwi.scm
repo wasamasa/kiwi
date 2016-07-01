@@ -108,8 +108,8 @@
 ;; (define KW_GetTilesetTexture)
 (define KW_GetFont (foreign-lambda KW_Font* "KW_GetFont" KW_GUI*))
 (define KW_SetFont (foreign-lambda void "KW_SetFont" KW_GUI* KW_Font*))
-(define KW_GetTextColor (foreign-lambda* void ((KW_GUI* gui) (int* r) (int* g) (int* b) (int* a)) "KW_Color c = KW_GetTextColor(gui); *r = c.r, *g = c.g, *b = c.b, *a = c.a;"))
-(define KW_SetTextColor (foreign-lambda* void ((KW_GUI* gui) (unsigned-byte r) (unsigned-byte g) (unsigned-byte b) (unsigned-byte a)) "KW_Color c = { r, g, b, a }; KW_SetTextColor(gui, c);"))
+(define KW_GetTextColor (foreign-lambda* void ((KW_GUI* gui) (KW_Color* out)) "KW_Color c = KW_GetTextColor(gui); out->r = c.r, out->g = c.g, out->b = c.b, out->a = c.a;"))
+(define KW_SetTextColor (foreign-lambda* void ((KW_GUI* gui) (KW_Color* c)) "KW_SetTextColor(gui, *c);"))
 ;; NOTE: seems too obscure to support, would require non-widget event handlers
 ;; (define KW_AddGUIFontChangedHandler)
 ;; (define KW_RemoveGUIFontChangedHandler)
@@ -146,8 +146,8 @@
 (define KW_SetLabelIcon (foreign-lambda* void ((KW_Widget* label) (int x) (int y) (int w) (int h)) "KW_Rect r = { x, y, w, h }; KW_SetLabelIcon(label, &r);"))
 (define KW_GetLabelFont (foreign-lambda KW_Font* "KW_GetLabelFont" KW_Widget*))
 (define KW_SetLabelFont (foreign-lambda void "KW_SetLabelFont" KW_Widget* KW_Font*))
-(define KW_GetLabelTextColor (foreign-lambda* void ((KW_Widget* widget) (KW_Color* c)) "KW_Color color = KW_GetLabelTextColor(widget); c->r = color.r, c->g = color.g, c->b = color.b, c->a = color.a;"))
-(define KW_SetLabelTextColor (foreign-lambda* void ((KW_Widget* label) (KW_Color* c)) "KW_Color color = { c->r, c->g, c->b, c->a }; KW_SetLabelTextColor(label, color);"))
+(define KW_GetLabelTextColor (foreign-lambda* void ((KW_Widget* widget) (KW_Color* out)) "KW_Color c = KW_GetLabelTextColor(widget); out->r = c.r, out->g = c.g, out->b = c.b, out->a = c.a;"))
+(define KW_SetLabelTextColor (foreign-lambda* void ((KW_Widget* label) (KW_Color* c)) "KW_SetLabelTextColor(label, *c);"))
 (define KW_WasLabelTextColorSet (foreign-lambda bool "KW_WasLabelTextColorSet" KW_Widget*))
 
 ;; KW_button.h
@@ -164,8 +164,8 @@
 (define KW_SetEditboxCursorPosition (foreign-lambda void "KW_SetEditboxCursorPosition" KW_Widget* unsigned-int))
 (define KW_GetEditboxFont (foreign-lambda KW_Font* "KW_GetEditboxFont" KW_Widget*))
 (define KW_SetEditboxFont (foreign-lambda void "KW_SetEditboxFont" KW_Widget* KW_Font*))
-(define KW_GetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (KW_Color* c)) "KW_Color color = KW_GetEditboxTextColor(editbox); c->r = color.r, c->g = color.g, c->b = color.b, c->a = color.a;"))
-(define KW_SetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (KW_Color* c)) "KW_Color color = { c->r, c->g, c->b, c->a }; KW_SetEditboxTextColor(editbox, color);"))
+(define KW_GetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (KW_Color* out)) "KW_Color c = KW_GetEditboxTextColor(editbox); out->r = c.r, out->g = c.g, out->b = c.b, out->a = c.a;"))
+(define KW_SetEditboxTextColor (foreign-lambda* void ((KW_Widget* editbox) (KW_Color* c)) "KW_SetEditboxTextColor(editbox, *c);"))
 (define KW_WasEditboxTextColorSet (foreign-lambda bool "KW_WasEditboxTextColorSet" KW_Widget*))
 
 ;; KW_widget.h
@@ -423,20 +423,15 @@
 
 (define (gui-text-color gui)
   (and-let* ((gui* (gui-pointer gui)))
-    (let-location ((r int)
-                   (g int)
-                   (b int)
-                   (a int))
-      (KW_GetTextColor gui* (location r) (location g) (location b) (location a))
-      (color r g b a))))
+    (let* ((color (color 0 0 0 0))
+           (color* (color-pointer color)))
+      (KW_GetTextColor gui* color*)
+      color)))
 
 (define (gui-text-color-set! gui color)
   (and-let* ((gui* (gui-pointer gui))
-             (r (color-r color))
-             (g (color-g color))
-             (b (color-b color))
-             (a (color-a color)))
-    (KW_SetTextColor gui* r g b a)))
+             (color* (color-pointer color)))
+    (KW_SetTextColor gui* color*)))
 
 (define gui-text-color (getter-with-setter gui-text-color gui-text-color-set!))
 
@@ -760,7 +755,7 @@
 
 (define (widget-text-color widget proc)
   (and-let* ((widget* (widget-pointer widget))
-             (color (make-blob KW_Color-size))
+             (color (make-color (make-blob KW_Color-size)))
              (color* (color-pointer color)))
     (proc widget* color*)
     color))
